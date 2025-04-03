@@ -64,7 +64,7 @@ class SellerService {
         imageUrls.add(downloadUrl);
       }
       
-      // Create product document in Firestore
+      // Create product document in Firestore for seller view
       final productData = {
         'sellerId': sellerId,
         'name': name,
@@ -90,7 +90,28 @@ class SellerService {
         'isApproved': false, // All new products need approval first
       };
       
+      // Add to sellerProducts collection
       final docRef = await _firestore.collection('sellerProducts').add(productData);
+      
+      // Prepare data for products collection (buyer-visible)
+      final buyerProductData = {
+        ...productData,
+        'productId': docRef.id, // Reference to the seller product
+        'rentalPrice': price * 0.1, // 10% of sale price
+        'isAvailableForRent': true,
+        'isAvailableForSale': true,
+        'categoryId': categories.isNotEmpty ? categories[0].toLowerCase() : 'other',
+        'category': categories.isNotEmpty ? categories[0] : 'Other',
+        'artisanId': sellerId,
+        'artisanName': sellerName,
+        'artisanLocation': userData?['businessAddress'] ?? 'India',
+        'stock': quantity,
+        'totalSales': 0,
+      };
+      
+      // Add to products collection (visible to buyers)
+      await _firestore.collection('products').add(buyerProductData);
+      
       return docRef.id;
     } catch (e) {
       print('Error adding product: $e');
@@ -123,7 +144,7 @@ class SellerService {
       final userData = userDoc.data();
       final String sellerName = userData?['name'] ?? 'Unknown Seller';
       
-      // Create product document in Firestore
+      // Create product document in Firestore for seller view
       final productData = {
         'sellerId': sellerId,
         'name': name,
@@ -149,7 +170,28 @@ class SellerService {
         'isApproved': false, // All new products need approval first
       };
       
+      // Add to sellerProducts collection
       final docRef = await _firestore.collection('sellerProducts').add(productData);
+      
+      // Prepare data for products collection (buyer-visible)
+      final buyerProductData = {
+        ...productData,
+        'productId': docRef.id, // Reference to the seller product
+        'rentalPrice': price * 0.1, // 10% of sale price
+        'isAvailableForRent': true,
+        'isAvailableForSale': true,
+        'categoryId': categories.isNotEmpty ? categories[0].toLowerCase() : 'other',
+        'category': categories.isNotEmpty ? categories[0] : 'Other',
+        'artisanId': sellerId,
+        'artisanName': sellerName,
+        'artisanLocation': userData?['businessAddress'] ?? 'India',
+        'stock': quantity,
+        'totalSales': 0,
+      };
+      
+      // Add to products collection (visible to buyers)
+      await _firestore.collection('products').add(buyerProductData);
+      
       return docRef.id;
     } catch (e) {
       print('Error adding product: $e');

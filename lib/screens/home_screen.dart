@@ -206,48 +206,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
           ),
         ],
       ),
-      floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        onPressed: () async {
-          // Show a dialog to confirm adding sample data
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Add Sample Data'),
-              content: const Text('Do you want to add sample products and categories?'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    // Show loading indicator
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Adding sample data...')),
-                    );
-                    // Add sample data
-                    await SampleDataUtil.addSampleCategories();
-                    await SampleDataUtil.addSampleProducts();
-                    // Show success message
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sample data added successfully! Restart the app to see changes.')),
-                      );
-                    }
-                  },
-                  child: const Text('Add Data'),
-                ),
-              ],
-            ),
-          );
-        },
-        tooltip: 'Add Sample Data',
-        child: const Icon(Icons.add_box),
-      ) : null,
     );
   }
 }

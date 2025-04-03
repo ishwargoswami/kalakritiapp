@@ -9,6 +9,7 @@ import 'package:kalakritiapp/screens/seller/edit_product_screen.dart';
 import 'package:kalakritiapp/screens/seller/orders_screen.dart';
 import 'package:kalakritiapp/services/seller_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:kalakritiapp/utils/sample_data_util.dart';
 
 class SellerDashboardScreen extends ConsumerWidget {
   const SellerDashboardScreen({super.key});
@@ -35,6 +36,11 @@ class SellerDashboardScreen extends ConsumerWidget {
               );
             },
             tooltip: 'Orders',
+          ),
+          IconButton(
+            icon: const Icon(Icons.data_array),
+            onPressed: () => _showAddSampleDataDialog(context),
+            tooltip: 'Add Sample Data',
           ),
         ],
       ),
@@ -71,6 +77,54 @@ class SellerDashboardScreen extends ConsumerWidget {
         },
         child: const Icon(Icons.add),
         tooltip: 'Add Product',
+      ),
+    );
+  }
+
+  void _showAddSampleDataDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Sample Data'),
+        content: const Text('Do you want to add sample products and categories to help you get started?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Adding sample data...')),
+              );
+              
+              try {
+                await SampleDataUtil.addSampleCategories();
+                await SampleDataUtil.addSellerProducts();
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sample data added successfully! Pull down to refresh.')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error adding sample data: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Add Data'),
+          ),
+        ],
       ),
     );
   }
