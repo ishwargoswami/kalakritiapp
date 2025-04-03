@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kalakritiapp/models/user_role.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/screens/auth/login_screen.dart';
 import 'package:kalakritiapp/screens/home_screen.dart';
+import 'package:kalakritiapp/screens/seller/seller_setup_screen.dart';
 import 'package:kalakritiapp/services/auth_service.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
 import 'package:kalakritiapp/widgets/custom_text_field.dart';
@@ -26,7 +28,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
-
+  UserRole _selectedRole = UserRole.buyer;
+  
   @override
   void dispose() {
     _nameController.dispose();
@@ -56,17 +59,32 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         password: _passwordController.text.trim(),
         name: _nameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
+        role: _selectedRole,
       );
       
-      // If successful, navigate to home screen
+      // If successful, navigate based on role
       if (mounted) {
         // Small delay to ensure Firebase auth state is fully updated
         await Future.delayed(const Duration(milliseconds: 300));
         
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
-        );
+        if (_selectedRole == UserRole.seller) {
+          // Navigate to seller setup screen
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => SellerSetupScreen(
+                user: userCredential.user!,
+                isNewUser: true,
+              ),
+            ),
+            (route) => false,
+          );
+        } else {
+          // Navigate to home screen for buyers
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            (route) => false,
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       // Handle authentication errors
@@ -94,13 +112,33 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     try {
       final authService = ref.read(authServiceProvider);
-      final userCredential = await authService.signInWithGoogle();
+      
+      // When signing in with Google, we need to specify the selected role too
+      final userCredential = await authService.signInWithGoogle(
+        selectedRole: _selectedRole,
+      );
       
       if (userCredential != null && mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
-        );
+        final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+        
+        if (isNewUser && _selectedRole == UserRole.seller) {
+          // Navigate to seller setup screen for new sellers
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => SellerSetupScreen(
+                user: userCredential.user!,
+                isNewUser: true,
+              ),
+            ),
+            (route) => false,
+          );
+        } else {
+          // Navigate to home screen for buyers or existing users
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       setState(() {
@@ -144,32 +182,191 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Title
+                // App logo or image
+                Center(
+                  child: CachedNetworkImage(
+                    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/kalakriti-app-396115.appspot.com/o/app_assets%2Fkalakriti_logo.png?alt=media',
+                    placeholder: (context, url) => const CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => const Icon(Icons.image),
+                    height: 100,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Page title
                 Text(
                   'Create Account',
-                  style: TextStyle(
-                    fontSize: 28,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
+                
+                // Subtitle
                 Text(
-                  'Sign up to explore handcrafted treasures from artisans',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                  'Please fill in the information below to create your account',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                
+                // Error message if any
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(color: Colors.red[700]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                
+                // Role selection
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'I want to:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // Role options
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedRole = UserRole.buyer;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: _selectedRole == UserRole.buyer
+                                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _selectedRole == UserRole.buyer
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.grey.shade300,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.shopping_cart,
+                                      color: _selectedRole == UserRole.buyer
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.grey,
+                                      size: 36,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Buy Products',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: _selectedRole == UserRole.buyer
+                                            ? Theme.of(context).colorScheme.primary
+                                            : Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedRole = UserRole.seller;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: _selectedRole == UserRole.seller
+                                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _selectedRole == UserRole.seller
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.grey.shade300,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.store,
+                                      color: _selectedRole == UserRole.seller
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Colors.grey,
+                                      size: 36,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Sell Products',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: _selectedRole == UserRole.seller
+                                            ? Theme.of(context).colorScheme.primary
+                                            : Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 
-                // Signup form
+                // Sign-up form
                 Form(
                   key: _formKey,
                   child: Column(
@@ -249,104 +446,88 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 8),
-                      
-                      // Error message
-                      if (_errorMessage != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          width: double.infinity,
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      
                       const SizedBox(height: 24),
                       
-                      // Signup button
+                      // Sign up button
                       CustomButton(
-                        text: 'Sign Up',
+                        text: 'Create Account',
                         onPressed: _signUp,
-                        isFullWidth: true,
                       ),
+                      const SizedBox(height: 16),
                       
-                      const SizedBox(height: 24),
-                      
-                      // OR divider
+                      // Or divider
                       Row(
                         children: [
                           Expanded(
                             child: Divider(
-                              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.3),
+                              color: Colors.grey[300],
+                              thickness: 1,
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'OR',
+                              'Or',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
                           Expanded(
                             child: Divider(
-                              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.3),
+                              color: Colors.grey[300],
+                              thickness: 1,
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 16),
                       
-                      const SizedBox(height: 24),
-                      
-                      // Google sign up button
+                      // Google sign-in button
                       OutlinedButton.icon(
-                        onPressed: _signInWithGoogle,
                         icon: CachedNetworkImage(
-                          imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
+                          imageUrl: 'https://firebasestorage.googleapis.com/v0/b/kalakriti-app-396115.appspot.com/o/app_assets%2Fgoogle_logo.png?alt=media',
                           height: 24,
-                          placeholder: (context, url) => SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Icon(
-                            Icons.g_mobiledata,
-                            size: 24,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
                         ),
                         label: const Text('Sign up with Google'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          minimumSize: const Size(double.infinity, 50),
+                          side: BorderSide(color: Colors.grey[300]!),
                         ),
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Terms and conditions
-                      Text(
-                        'By signing up, you agree to our Terms of Service and Privacy Policy',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-                        ),
-                        textAlign: TextAlign.center,
+                        onPressed: _signInWithGoogle,
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Login link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account?',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      },
+                      child: Text(
+                        'Log In',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

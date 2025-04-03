@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kalakritiapp/models/user_model.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/screens/auth/login_screen.dart';
 import 'package:kalakritiapp/utils/theme.dart';
@@ -101,7 +102,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileContent(BuildContext context, Map<String, dynamic> userData, WidgetRef ref) {
+  Widget _buildProfileContent(BuildContext context, UserModel userData, WidgetRef ref) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -146,11 +147,11 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, Map<String, dynamic> userData, WidgetRef ref) {
-    final String displayName = userData['name'] ?? 'User';
-    final String email = userData['email'] ?? '';
-    final String phone = userData['phone'] ?? '';
-    final String profilePicture = userData['profilePicture'] ?? '';
+  Widget _buildProfileHeader(BuildContext context, UserModel userData, WidgetRef ref) {
+    final String displayName = userData.name ?? 'User';
+    final String email = userData.email ?? '';
+    final String phone = userData.phoneNumber ?? '';
+    final String profilePicture = userData.photoURL ?? '';
     
     return Card(
       elevation: 2,

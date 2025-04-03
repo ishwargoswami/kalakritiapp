@@ -7,10 +7,12 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kalakritiapp/models/category.dart';
 import 'package:kalakritiapp/models/product.dart';
+import 'package:kalakritiapp/models/user_role.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/providers/cart_provider.dart';
 import 'package:kalakritiapp/providers/category_provider.dart';
 import 'package:kalakritiapp/providers/product_provider.dart';
+import 'package:kalakritiapp/providers/seller_provider.dart';
 import 'package:kalakritiapp/providers/wishlist_provider.dart';
 import 'package:kalakritiapp/screens/auth/login_screen.dart';
 import 'package:kalakritiapp/screens/cart_screen.dart';
@@ -19,6 +21,7 @@ import 'package:kalakritiapp/screens/product_detail_screen.dart';
 import 'package:kalakritiapp/screens/profile_screen.dart';
 import 'package:kalakritiapp/screens/rentals_screen.dart';
 import 'package:kalakritiapp/screens/search_screen.dart';
+import 'package:kalakritiapp/screens/seller/seller_home_screen.dart';
 import 'package:kalakritiapp/screens/wishlist_screen.dart';
 import 'package:kalakritiapp/screens/all_categories_screen.dart';
 import 'package:kalakritiapp/services/auth_service.dart';
@@ -26,6 +29,7 @@ import 'package:kalakritiapp/utils/theme.dart';
 import 'package:kalakritiapp/widgets/animated_navigation.dart';
 import 'package:kalakritiapp/widgets/category_card.dart';
 import 'package:kalakritiapp/widgets/enhanced_carousel_slider.dart';
+import 'package:kalakritiapp/widgets/loading_overlay.dart';
 import 'package:kalakritiapp/widgets/product_card.dart';
 import 'package:kalakritiapp/widgets/section_title.dart';
 import 'package:animate_do/animate_do.dart';
@@ -43,15 +47,43 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  bool _isLoading = true;
+  bool _isSeller = false;
   
-  final List<Widget> _pages = [
-    const _PageWithBottomPadding(child: HomePage()),
-    const _PageWithBottomPadding(child: AllCategoriesScreen()),
-    const _PageWithBottomPadding(child: RentalsScreen()),
-    const _PageWithBottomPadding(child: WishlistScreen()),
-    const _PageWithBottomPadding(child: CartScreen()),
-    const _PageWithBottomPadding(child: ProfileScreen()),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _checkUserRole();
+  }
+  
+  Future<void> _checkUserRole() async {
+    final authService = ref.read(authServiceProvider);
+    
+    try {
+      final role = await authService.getCurrentUserRole();
+      
+      if (mounted) {
+        if (role == UserRole.seller) {
+          // If user is a seller, redirect to the seller home screen
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const SellerHomeScreen()),
+          );
+        } else {
+          setState(() {
+            _isSeller = false;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSeller = false;
+          _isLoading = false;
+        });
+      }
+    }
+  }
   
   @override
   void dispose() {
@@ -73,6 +105,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const LoadingOverlay(
+        isLoading: true,
+        child: Scaffold(
+          body: Center(
+            child: Text('Loading...'),
+          ),
+        ),
+      );
+    }
+    
+    // Buyer-specific pages
+    final List<Widget> _pages = [
+      const _PageWithBottomPadding(child: HomePage()),
+      const _PageWithBottomPadding(child: AllCategoriesScreen()),
+      const _PageWithBottomPadding(child: RentalsScreen()),
+      const _PageWithBottomPadding(child: WishlistScreen()),
+      const _PageWithBottomPadding(child: CartScreen()),
+      const _PageWithBottomPadding(child: ProfileScreen()),
+    ];
+    
     final wishlistCount = ref.watch(wishlistCountProvider);
     final cartItemCount = ref.watch(cartItemCountProvider);
     
