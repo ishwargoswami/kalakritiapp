@@ -8,7 +8,7 @@ class Category {
   final int productCount;
   final int displayOrder;
 
-  Category({
+  const Category({
     required this.id,
     required this.name,
     required this.imageUrl,

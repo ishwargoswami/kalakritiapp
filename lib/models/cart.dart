@@ -7,7 +7,7 @@ class CartItem {
   final bool isRental;
   final DateTime? rentalStartDate;
   final DateTime? rentalEndDate;
-
+  
   CartItem({
     required this.product,
     required this.quantity,
@@ -15,16 +15,16 @@ class CartItem {
     this.rentalStartDate,
     this.rentalEndDate,
   });
-
+  
   double get totalPrice {
-    if (isRental && product.rentalPrice != null) {
-      final int days = rentalEndDate!.difference(rentalStartDate!).inDays + 1;
-      return product.rentalPrice! * quantity * days;
+    if (isRental && rentalStartDate != null && rentalEndDate != null && product.rentalPrice != null) {
+      final days = rentalEndDate!.difference(rentalStartDate!).inDays + 1;
+      return product.rentalPrice! * days * quantity;
     } else {
       return product.price * quantity;
     }
   }
-
+  
   Map<String, dynamic> toMap() {
     return {
       'productId': product.id,
@@ -34,96 +34,67 @@ class CartItem {
       'rentalEndDate': rentalEndDate,
     };
   }
+  
+  factory CartItem.fromMap(Map<String, dynamic> map, Product product) {
+    return CartItem(
+      product: product,
+      quantity: map['quantity'] ?? 1,
+      isRental: map['isRental'] ?? false,
+      rentalStartDate: map['rentalStartDate'] != null ? (map['rentalStartDate'] as Timestamp).toDate() : null,
+      rentalEndDate: map['rentalEndDate'] != null ? (map['rentalEndDate'] as Timestamp).toDate() : null,
+    );
+  }
 }
 
 class Cart {
   final String userId;
   final Map<String, CartItem> items;
-  final Timestamp createdAt;
-  final Timestamp updatedAt;
-
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  
   Cart({
     required this.userId,
     required this.items,
     required this.createdAt,
     required this.updatedAt,
   });
-
-  int get itemCount {
-    return items.values.fold(0, (sum, item) => sum + item.quantity);
-  }
-
+  
   double get totalAmount {
-    return items.values.fold(0, (sum, item) => sum + item.totalPrice);
+    double total = 0;
+    items.forEach((key, item) {
+      total += item.totalPrice;
+    });
+    return total;
   }
-
+  
+  int get itemCount {
+    int count = 0;
+    items.forEach((key, item) {
+      count += item.quantity;
+    });
+    return count;
+  }
+  
   factory Cart.empty(String userId) {
     return Cart(
       userId: userId,
       items: {},
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
   }
-
-  factory Cart.fromFirestore(DocumentSnapshot doc, Map<String, Product> products) {
-    final data = doc.data() as Map<String, dynamic>;
-    final itemsData = data['items'] as Map<String, dynamic>;
-    
-    Map<String, CartItem> cartItems = {};
-    
-    itemsData.forEach((productId, quantity) {
-      if (products.containsKey(productId)) {
-        cartItems[productId] = CartItem(
-          product: products[productId]!,
-          quantity: quantity,
-          isRental: data['isRental']?[productId] ?? false,
-          rentalStartDate: data['rentalStartDate']?[productId] != null 
-              ? (data['rentalStartDate'][productId] as Timestamp).toDate() 
-              : null,
-          rentalEndDate: data['rentalEndDate']?[productId] != null 
-              ? (data['rentalEndDate'][productId] as Timestamp).toDate() 
-              : null,
-        );
-      }
-    });
-    
-    return Cart(
-      userId: data['userId'] ?? '',
-      items: cartItems,
-      createdAt: data['createdAt'] ?? Timestamp.now(),
-      updatedAt: data['updatedAt'] ?? Timestamp.now(),
-    );
-  }
-
+  
   Map<String, dynamic> toFirestore() {
-    Map<String, dynamic> itemQuantities = {};
-    Map<String, dynamic> itemRentalFlags = {};
-    Map<String, dynamic> startDates = {};
-    Map<String, dynamic> endDates = {};
-    
-    items.forEach((productId, cartItem) {
-      itemQuantities[productId] = cartItem.quantity;
-      
-      if (cartItem.isRental) {
-        itemRentalFlags[productId] = true;
-        if (cartItem.rentalStartDate != null) {
-          startDates[productId] = Timestamp.fromDate(cartItem.rentalStartDate!);
-        }
-        if (cartItem.rentalEndDate != null) {
-          endDates[productId] = Timestamp.fromDate(cartItem.rentalEndDate!);
-        }
-      }
+    Map<String, dynamic> itemsMap = {};
+    items.forEach((key, value) {
+      itemsMap[key] = value.toMap();
     });
     
     return {
       'userId': userId,
-      'items': itemQuantities,
-      'isRental': itemRentalFlags,
-      'rentalStartDate': startDates,
-      'rentalEndDate': endDates,
+      'items': itemsMap,
       'createdAt': createdAt,
-      'updatedAt': Timestamp.now(),
+      'updatedAt': updatedAt,
     };
   }
 } 

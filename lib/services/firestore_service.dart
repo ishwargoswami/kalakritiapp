@@ -58,14 +58,28 @@ class FirestoreService {
 
   // Search products
   Future<List<Product>> searchProducts(String query) async {
-    // This is a simple implementation and might not be efficient
-    // For production, consider using Firebase Extensions like Algolia
-    final QuerySnapshot snapshot = await _productsCollection
-        .where('name', isGreaterThanOrEqualTo: query)
-        .where('name', isLessThanOrEqualTo: query + '\uf8ff')
-        .get();
-    
-    return snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
+    try {
+      // For basic search, we'll fetch products and filter client-side
+      final querySnapshot = await _firestore
+          .collection('products')
+          .get();
+      
+      final allProducts = querySnapshot.docs
+          .map((doc) => Product.fromMap(doc.id, doc.data()))
+          .toList();
+      
+      // Filter products that contain the query in name, description, or artisan name
+      final lowercaseQuery = query.toLowerCase();
+      return allProducts.where((product) {
+        return product.name.toLowerCase().contains(lowercaseQuery) ||
+                product.description.toLowerCase().contains(lowercaseQuery) ||
+                product.artisanName.toLowerCase().contains(lowercaseQuery) ||
+                product.category.toLowerCase().contains(lowercaseQuery);
+      }).toList();
+    } catch (e) {
+      print('Error searching products: $e');
+      return [];
+    }
   }
 
   // CATEGORIES
@@ -116,6 +130,49 @@ class FirestoreService {
     }
   }
 
+  // Update cart item with rental info
+  Future<void> updateCartItem(
+    String userId,
+    String productId, {
+    required int quantity,
+    bool isRental = false,
+    DateTime? rentalStartDate,
+    DateTime? rentalEndDate,
+  }) async {
+    final cartRef = _cartCollection.doc(userId);
+    final cartDoc = await cartRef.get();
+    
+    Map<String, dynamic> itemData = {
+      'quantity': quantity,
+      'isRental': isRental,
+    };
+    
+    if (isRental) {
+      if (rentalStartDate != null) {
+        itemData['rentalStartDate'] = Timestamp.fromDate(rentalStartDate);
+      }
+      if (rentalEndDate != null) {
+        itemData['rentalEndDate'] = Timestamp.fromDate(rentalEndDate);
+      }
+    }
+    
+    if (cartDoc.exists) {
+      // Cart exists, update it
+      await cartRef.update({
+        'items.$productId': itemData,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Create new cart
+      await cartRef.set({
+        'userId': userId,
+        'items': {productId: itemData},
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
   // Remove item from cart
   Future<void> removeFromCart(String userId, String productId) async {
     final cartRef = _cartCollection.doc(userId);
@@ -131,7 +188,7 @@ class FirestoreService {
     final cartRef = _cartCollection.doc(userId);
     
     await cartRef.update({
-      'items.$productId': quantity,
+      'items.$productId.quantity': quantity,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -172,5 +229,41 @@ class FirestoreService {
         .where('userId', isEqualTo: userId)
         .orderBy('rentDate', descending: true)
         .get();
+  }
+
+  // Get best selling products
+  Future<List<Product>> getBestSellingProducts() async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('products')
+          .orderBy('totalSales', descending: true)
+          .limit(10)
+          .get();
+      
+      return querySnapshot.docs
+          .map((doc) => Product.fromMap(doc.id, doc.data()))
+          .toList();
+    } catch (e) {
+      print('Error getting best selling products: $e');
+      return [];
+    }
+  }
+
+  // Get products by category name
+  Future<List<Product>> getProductsByCategoryName(String categoryName) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('products')
+          .where('category', isEqualTo: categoryName)
+          .limit(10)
+          .get();
+      
+      return querySnapshot.docs
+          .map((doc) => Product.fromMap(doc.id, doc.data()))
+          .toList();
+    } catch (e) {
+      print('Error getting products by category name: $e');
+      return [];
+    }
   }
 } 

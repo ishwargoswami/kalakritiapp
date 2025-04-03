@@ -1,7 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kalakritiapp/models/category.dart';
-import 'package:kalakritiapp/providers/product_provider.dart';
+import 'package:kalakritiapp/providers/cart_provider.dart';
 import 'package:kalakritiapp/services/firestore_service.dart';
+
+// Provider for FirestoreService
+final firestoreServiceProvider = Provider<FirestoreService>((ref) {
+  return FirestoreService();
+});
 
 // Provider for all categories
 final categoriesProvider = FutureProvider<List<Category>>((ref) async {
