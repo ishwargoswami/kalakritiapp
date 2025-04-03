@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kalakritiapp/firebase_options.dart';
@@ -12,6 +13,9 @@ import 'package:kalakritiapp/utils/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Explicitly enable screenshots
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   
   try {
     // Initialize Firebase with options

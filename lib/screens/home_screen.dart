@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -105,6 +106,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   
   @override
   Widget build(BuildContext context) {
+    // Explicitly allow screenshots by setting DeviceOrientation
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    
     if (_isLoading) {
       return const LoadingOverlay(
         isLoading: true,

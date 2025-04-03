@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kalakritiapp/models/cart_item.dart';
 import 'package:kalakritiapp/models/product.dart';
@@ -79,6 +80,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Explicitly allow screenshots
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    
     final productAsync = ref.watch(productDetailsProvider(widget.productId));
     final isInWishlistAsync = ref.watch(isInWishlistProvider(widget.productId));
     
