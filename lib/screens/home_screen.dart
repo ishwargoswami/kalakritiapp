@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:kalakritiapp/models/category.dart';
 import 'package:kalakritiapp/models/product.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
@@ -80,10 +81,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         backgroundColor: Theme.of(context).colorScheme.primary,
         title: Text(
           'कलाकृति',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
+          style: GoogleFonts.notoSansDevanagari(
+            textStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 28,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
         actions: [

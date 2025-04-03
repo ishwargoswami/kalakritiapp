@@ -6,6 +6,7 @@ import 'package:kalakritiapp/screens/auth/login_screen.dart';
 import 'package:kalakritiapp/screens/home_screen.dart';
 import 'package:kalakritiapp/screens/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:animate_do/animate_do.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -15,42 +16,27 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-
+  // Split the Sanskrit text into individual characters for animation
+  final List<String> _sanskritChars = ['क', 'ला', 'कृ', 'ति'];
+  final List<String> _taglineWords = ['Vocal', 'for', 'Local'];
+  
+  // Animation timing variables
+  final int _charAnimationDuration = 400; // milliseconds per character
+  final int _charAnimationDelay = 200; // milliseconds between characters
+  final int _taglineDelay = 1200; // milliseconds before tagline starts
+  
   @override
   void initState() {
     super.initState();
-    
-    // Animation setup
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
-    
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeInOut),
-      ),
-    );
-    
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.4, 1.0, curve: Curves.easeInOut),
-      ),
-    );
-    
-    // Start animation and navigate after completion
-    _controller.forward().then((_) => _checkAuthState());
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    // Navigate after animations complete
+    Future.delayed(Duration(milliseconds: 
+      _charAnimationDelay * _sanskritChars.length + 
+      _taglineDelay + 
+      _charAnimationDelay * _taglineWords.length + 
+      1000
+    ), () {
+      _checkAuthState();
+    });
   }
 
   // Check if user is logged in and onboarding is completed
@@ -64,9 +50,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       final User? currentUser = FirebaseAuth.instance.currentUser;
       final bool isLoggedIn = currentUser != null;
       print('Is logged in: $isLoggedIn, User: ${currentUser?.uid}');
-      
-      // Wait for animation to complete
-      await Future.delayed(const Duration(milliseconds: 500));
       
       if (mounted) {
         if (!onboardingCompleted) {
@@ -99,43 +82,95 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: theme.colorScheme.background,
       body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Sanskrit Text - कलाकृति
-                    Text(
-                      'कलाकृति',
-                      style: GoogleFonts.notoSansDevanagari(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Sanskrit Text animation
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _sanskritChars.length,
+                (index) {
+                  return FadeInDown(
+                    duration: Duration(milliseconds: _charAnimationDuration),
+                    delay: Duration(milliseconds: index * _charAnimationDelay),
+                    from: 30,
+                    child: ZoomIn(
+                      duration: Duration(milliseconds: _charAnimationDuration),
+                      delay: Duration(milliseconds: index * _charAnimationDelay),
+                      child: Text(
+                        _sanskritChars[index],
+                        style: GoogleFonts.notoSansDevanagari(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                          letterSpacing: 1.0,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    // Tagline
-                    Text(
-                      'Vocal for Local',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Theme.of(context).colorScheme.secondary,
-                        letterSpacing: 1.5,
+                  );
+                },
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Tagline animation
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _taglineWords.length,
+                (index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: FadeInUp(
+                      duration: Duration(milliseconds: _charAnimationDuration),
+                      delay: Duration(milliseconds: _taglineDelay + index * _charAnimationDelay),
+                      from: 20,
+                      child: Text(
+                        _taglineWords[index],
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          color: theme.colorScheme.secondary,
+                          letterSpacing: 1.2,
+                          fontWeight: index == 0 || index == 2 ? FontWeight.w600 : FontWeight.w400,
+                        ),
                       ),
                     ),
-                  ],
+                  );
+                },
+              ),
+            ),
+            
+            // Animated underline
+            FadeIn(
+              delay: Duration(milliseconds: _taglineDelay + _taglineWords.length * _charAnimationDelay),
+              duration: const Duration(milliseconds: 500),
+              child: SlideInLeft(
+                delay: Duration(milliseconds: _taglineDelay + _taglineWords.length * _charAnimationDelay),
+                duration: const Duration(milliseconds: 800),
+                child: Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  height: 2,
+                  width: 100,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
