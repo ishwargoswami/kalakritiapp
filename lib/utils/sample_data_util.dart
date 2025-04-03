@@ -18,8 +18,8 @@ class SampleDataUtil {
           'categoryId': 'handicrafts',
           'category': 'Handicrafts',
           'imageUrls': [
-            'https://images.unsplash.com/photo-1584499270550-e486d016239e?q=80&w=2070',
-            'https://images.unsplash.com/photo-1494057905450-753aa3bd6631?q=80&w=2069'
+            'https://images.pexels.com/photos/6193090/pexels-photo-6193090.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            'https://images.pexels.com/photos/7260549/pexels-photo-7260549.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
           ],
           'isFeatured': true,
           'rating': 4.7,
@@ -46,8 +46,8 @@ class SampleDataUtil {
           'categoryId': 'traditional',
           'category': 'Traditional',
           'imageUrls': [
-            'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=2070',
-            'https://images.unsplash.com/photo-1555196301-9acc011dfde4?q=80&w=1974'
+            'https://images.pexels.com/photos/6258031/pexels-photo-6258031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            'https://images.pexels.com/photos/5705508/pexels-photo-5705508.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
           ],
           'isFeatured': true,
           'rating': 4.9,
@@ -74,8 +74,8 @@ class SampleDataUtil {
           'categoryId': 'handicrafts',
           'category': 'Handicrafts',
           'imageUrls': [
-            'https://images.unsplash.com/photo-1582547721161-f2a51e9f6f3f?q=80&w=2067',
-            'https://images.unsplash.com/photo-1598532213932-98064d2c7956?q=80&w=2071'
+            'https://images.pexels.com/photos/12029653/pexels-photo-12029653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            'https://images.pexels.com/photos/15913452/pexels-photo-15913452/free-photo-of-woman-creating-traditional-paintings.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
           ],
           'isFeatured': false,
           'rating': 4.8,
@@ -102,8 +102,8 @@ class SampleDataUtil {
           'categoryId': 'traditional',
           'category': 'Traditional',
           'imageUrls': [
-            'https://images.unsplash.com/photo-1605365070248-299a257e911b?q=80&w=2070',
-            'https://images.unsplash.com/photo-1604232749999-0b1681c1a1a9?q=80&w=2070'
+            'https://images.pexels.com/photos/7175443/pexels-photo-7175443.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            'https://images.pexels.com/photos/15874258/pexels-photo-15874258/free-photo-of-traditional-decorative-lamps.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
           ],
           'isFeatured': true,
           'rating': 4.5,
@@ -130,8 +130,8 @@ class SampleDataUtil {
           'categoryId': 'handicrafts',
           'category': 'Handicrafts',
           'imageUrls': [
-            'https://images.unsplash.com/photo-1569172131546-0df55a7d7566?q=80&w=2070',
-            'https://images.unsplash.com/photo-1599098615666-53cc8e7f67c9?q=80&w=2071'
+            'https://images.pexels.com/photos/12068871/pexels-photo-12068871.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            'https://images.pexels.com/photos/6758292/pexels-photo-6758292.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
           ],
           'isFeatured': false,
           'rating': 4.9,
@@ -169,16 +169,37 @@ class SampleDataUtil {
         {
           'name': 'Handicrafts',
           'description': 'Beautiful handcrafted items from skilled artisans',
-          'imageUrl': 'https://images.unsplash.com/photo-1582550740000-5e4f70e6e87d?q=80&w=2070',
+          'imageUrl': 'https://images.pexels.com/photos/12029653/pexels-photo-12029653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
           'productCount': 0,
           'displayOrder': 1,
         },
         {
           'name': 'Traditional',
           'description': 'Timeless traditional pieces celebrating Indian heritage',
-          'imageUrl': 'https://images.unsplash.com/photo-1590736969955-71cc94c4dd66?q=80&w=2070',
+          'imageUrl': 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
           'productCount': 0,
           'displayOrder': 2,
+        },
+        {
+          'name': 'Handloom Textiles',
+          'description': 'Exquisite handwoven textiles from across India',
+          'imageUrl': 'https://images.pexels.com/photos/6193101/pexels-photo-6193101.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+          'productCount': 0,
+          'displayOrder': 3,
+        },
+        {
+          'name': 'Home Decor',
+          'description': 'Beautiful handcrafted items for your home',
+          'imageUrl': 'https://images.pexels.com/photos/6194021/pexels-photo-6194021.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+          'productCount': 0,
+          'displayOrder': 4,
+        },
+        {
+          'name': 'Pottery & Ceramics',
+          'description': 'Handcrafted pottery and ceramic artifacts',
+          'imageUrl': 'https://images.pexels.com/photos/6258031/pexels-photo-6258031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+          'productCount': 0,
+          'displayOrder': 5,
         },
       ];
 

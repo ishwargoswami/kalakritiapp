@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 import 'package:kalakritiapp/models/product.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/providers/cart_provider.dart';
@@ -11,6 +12,12 @@ import 'package:kalakritiapp/utils/theme.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
 import 'package:kalakritiapp/widgets/rental_date_picker.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:kalakritiapp/services/firestore_service.dart';
+
+// Provider for FirestoreService if not already defined elsewhere
+final firestoreServiceProvider = Provider<FirestoreService>((ref) {
+  return FirestoreService();
+});
 
 // Create a custom Firestore provider for rental products
 final rentalProductsProvider = FutureProvider<List<Product>>((ref) async {
@@ -24,24 +31,33 @@ final activeRentalsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) a
   final user = ref.watch(currentUserProvider);
   if (user == null) return [];
   
-  final firestoreService = ref.watch(firestoreServiceProvider);
-  final rentalsSnapshot = await firestoreService.getUserRentals(user.uid);
-  
-  final List<Map<String, dynamic>> rentals = [];
-  for (var doc in rentalsSnapshot.docs) {
-    final data = doc.data() as Map<String, dynamic>;
-    data['id'] = doc.id;
-    rentals.add(data);
+  try {
+    final firestoreService = ref.watch(firestoreServiceProvider);
+    final rentalsSnapshot = await firestoreService.getUserRentals(user.uid);
+    
+    final List<Map<String, dynamic>> rentals = [];
+    for (var doc in rentalsSnapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id;
+      rentals.add(data);
+    }
+    
+    // Sort by rental date, newest first
+    rentals.sort((a, b) {
+      final aDate = (a['rentDate'] as dynamic).toDate();
+      final bDate = (b['rentDate'] as dynamic).toDate();
+      return bDate.compareTo(aDate);
+    });
+    
+    return rentals;
+  } catch (e) {
+    // Check if it's a missing index error
+    if (e.toString().contains('failed-precondition') && 
+        e.toString().contains('index')) {
+      throw 'Firestore index is being created. Please try again in a few minutes.';
+    }
+    rethrow;
   }
-  
-  // Sort by rental date, newest first
-  rentals.sort((a, b) {
-    final aDate = (a['rentDate'] as dynamic).toDate();
-    final bDate = (b['rentDate'] as dynamic).toDate();
-    return bDate.compareTo(aDate);
-  });
-  
-  return rentals;
 });
 
 class RentalsScreen extends ConsumerStatefulWidget {
@@ -151,19 +167,24 @@ class RentalProductsTab extends ConsumerWidget {
           children: [
             Icon(Icons.error_outline, size: 48, color: kAccentColor),
             const SizedBox(height: 16),
-            Text(
-              'Error loading rental products: $error',
-              style: TextStyle(color: kAccentColor),
-              textAlign: TextAlign.center,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Text(
+                error.toString().contains('index') 
+                    ? 'We\'re setting up some things in the database. Please check back in a few minutes.'
+                    : 'Error loading rental products: $error',
+                style: TextStyle(color: kAccentColor),
+                textAlign: TextAlign.center,
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.refresh(rentalProductsProvider),
+              child: const Text('Retry'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kSecondaryColor,
+                backgroundColor: kPrimaryColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Retry'),
             ),
           ],
         ),
@@ -202,14 +223,41 @@ class RentalProductsTab extends ConsumerWidget {
                   child: CachedNetworkImage(
                     imageUrl: product.imageUrls.isNotEmpty
                         ? product.imageUrls.first
-                        : 'https://via.placeholder.com/400x200',
+                        : 'https://via.placeholder.com/400x200?text=Product+Image',
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Shimmer.fromColors(
                       baseColor: Colors.grey[300]!,
                       highlightColor: Colors.grey[100]!,
                       child: Container(color: Colors.white),
                     ),
-                    errorWidget: (context, url, error) => const Icon(Icons.error),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[200],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Colors.grey[400],
+                            size: 36,
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              product.name,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    memCacheWidth: 800,
                   ),
                 ),
                 Positioned(
@@ -514,16 +562,59 @@ class MyRentalsTab extends ConsumerWidget {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) => Center(
-        child: Text('Error loading rentals: $error'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: kAccentColor),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Text(
+                error.toString().contains('index') 
+                    ? 'We\'re setting up some things in the database. Please check back in a few minutes.'
+                    : 'Error loading rentals: $error',
+                style: TextStyle(color: kAccentColor),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => ref.refresh(activeRentalsProvider),
+              child: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRentalOrderCard(BuildContext context, Map<String, dynamic> rental) {
     final DateFormat dateFormat = DateFormat('dd MMM yyyy');
-    final String orderId = rental['id'];
-    final DateTime rentDate = (rental['rentDate'] as dynamic).toDate();
-    final DateTime returnDate = (rental['returnDate'] as dynamic).toDate();
+    final String orderId = rental['id'] ?? '';
+    
+    // Safely handle date fields with null checks
+    DateTime? rentDate;
+    if (rental['rentDate'] != null) {
+      try {
+        rentDate = (rental['rentDate'] as dynamic).toDate();
+      } catch (e) {
+        print('Error parsing rentDate: $e');
+      }
+    }
+    
+    DateTime? returnDate;
+    if (rental['returnDate'] != null) {
+      try {
+        returnDate = (rental['returnDate'] as dynamic).toDate();
+      } catch (e) {
+        print('Error parsing returnDate: $e');
+      }
+    }
+    
     final double totalAmount = (rental['totalAmount'] ?? 0.0).toDouble();
     final String status = rental['status'] ?? 'Processing';
     
@@ -546,8 +637,51 @@ class MyRentalsTab extends ConsumerWidget {
         statusColor = kSecondaryColor;
     }
     
-    // Get the items
+    // Get the items safely
     final List<dynamic> items = rental['items'] ?? [];
+    
+    // If critical data is missing, show simplified card
+    if (rentDate == null || returnDate == null) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Order #${orderId.isNotEmpty ? orderId.substring(0, min(orderId.length, 8)) : "Unknown"}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Issue with rental data. Please contact support.',
+                style: TextStyle(color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              CustomButton(
+                text: 'Contact Support',
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Support chat coming soon!'),
+                    ),
+                  );
+                },
+                backgroundColor: kPrimaryColor,
+                textColor: Colors.white,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -575,7 +709,7 @@ class MyRentalsTab extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order #${orderId.substring(0, 8)}',
+                      'Order #${orderId.isNotEmpty ? orderId.substring(0, min(orderId.length, 8)) : "Unknown"}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                       ),

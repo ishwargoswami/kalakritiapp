@@ -66,23 +66,47 @@ class ProductCard extends ConsumerWidget {
               children: [
                 // Product image
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                  child: SizedBox(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: product.imageUrls.isNotEmpty 
+                        ? product.imageUrls.first 
+                        : 'https://via.placeholder.com/300x300?text=No+Image',
                     height: 160,
                     width: double.infinity,
-                    child: CachedNetworkImage(
-                      imageUrl: product.imageUrls.isNotEmpty ? product.imageUrls[0] : '',
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(
-                          color: Colors.white,
-                        ),
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(
+                        color: Colors.white,
+                        height: 160,
+                        width: double.infinity,
                       ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.image_not_supported_outlined),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 160,
+                      width: double.infinity,
+                      color: Colors.grey[200],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Colors.grey[400],
+                            size: 36,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            product.name,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
                   ),

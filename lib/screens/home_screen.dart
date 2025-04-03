@@ -44,12 +44,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   final PageController _pageController = PageController();
   
   final List<Widget> _pages = [
-    const HomePage(),
-    const AllCategoriesScreen(),
-    const RentalsScreen(),
-    const WishlistScreen(),
-    const CartScreen(),
-    const ProfileScreen(),
+    const _PageWithBottomPadding(child: HomePage()),
+    const _PageWithBottomPadding(child: AllCategoriesScreen()),
+    const _PageWithBottomPadding(child: RentalsScreen()),
+    const _PageWithBottomPadding(child: WishlistScreen()),
+    const _PageWithBottomPadding(child: CartScreen()),
+    const _PageWithBottomPadding(child: ProfileScreen()),
   ];
   
   @override
@@ -72,13 +72,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   
   @override
   Widget build(BuildContext context) {
-    // Get the cart item count for the badge
-    final cartItemCount = ref.watch(cartItemCountProvider);
     final wishlistCount = ref.watch(wishlistCountProvider);
-
+    final cartItemCount = ref.watch(cartItemCountProvider);
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
+      appBar: _currentIndex == 0 ? AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
         title: Text(
           'कलाकृति',
@@ -125,28 +123,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
             },
           ),
         ],
+      ) : null,
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            children: _pages,
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedNavigation(
+              selectedItem: AnimatedNavItemType.values[_currentIndex],
+              onItemSelected: _onNavItemTapped,
+              wishlistCount: wishlistCount,
+              cartItemCount: cartItemCount,
+            ),
+          ),
+        ],
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: _pages.map((page) {
-          final index = _pages.indexOf(page);
-          if (index == _currentIndex) {
-            return FadeIn(
-              duration: const Duration(milliseconds: 250),
-              child: page,
-            );
-          } else {
-            return page;
-          }
-        }).toList(),
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
+        backgroundColor: Theme.of(context).colorScheme.secondary,
         onPressed: () async {
           // Show a dialog to confirm adding sample data
           showDialog(
@@ -186,13 +190,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         },
         tooltip: 'Add Sample Data',
         child: const Icon(Icons.add_box),
-      ),
-      bottomNavigationBar: AnimatedNavigation(
-        selectedItem: AnimatedNavItemType.values[_currentIndex],
-        onItemSelected: _onNavItemTapped,
-        wishlistCount: wishlistCount,
-        cartItemCount: cartItemCount,
-      ),
+      ) : null,
+    );
+  }
+}
+
+// Wrapper for pages to add bottom padding
+class _PageWithBottomPadding extends StatelessWidget {
+  final Widget child;
+  
+  const _PageWithBottomPadding({required this.child});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80),
+      child: child,
     );
   }
 }
@@ -214,7 +227,7 @@ class HomePage extends ConsumerWidget {
     // Carousel items
     final List<Map<String, dynamic>> carouselItems = [
       {
-        'image': 'https://images.unsplash.com/photo-1606293459339-bad3008075e1?ixlib=rb-4.0.3',
+        'image': 'https://images.pexels.com/photos/6464421/pexels-photo-6464421.jpeg',
         'title': 'Authentic Indian Crafts',
         'subtitle': 'Explore our collection of handcrafted items',
         'color': Colors.indigo,
@@ -229,7 +242,7 @@ class HomePage extends ConsumerWidget {
                   id: 'handicrafts',
                   name: 'Handicrafts',
                   description: 'Beautiful handcrafted items from skilled artisans',
-                  imageUrl: 'https://images.unsplash.com/photo-1582550740000-5e4f70e6e87d?ixlib=rb-4.0.3',
+                  imageUrl: 'https://images.pexels.com/photos/12029653/pexels-photo-12029653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
                   productCount: 0,
                   displayOrder: 4,
                 ),
@@ -241,7 +254,7 @@ class HomePage extends ConsumerWidget {
         'badgeColor': Colors.orange,
       },
       {
-        'image': 'https://images.unsplash.com/photo-1590736969955-71cc94c4dd66?ixlib=rb-4.0.3',
+        'image': 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg',
         'title': 'Traditional Artistry',
         'subtitle': 'Discover the beauty of Indian heritage',
         'color': Colors.teal,
@@ -256,7 +269,7 @@ class HomePage extends ConsumerWidget {
                   id: 'traditional',
                   name: 'Traditional',
                   description: 'Timeless traditional pieces celebrating Indian heritage',
-                  imageUrl: 'https://images.unsplash.com/photo-1590736969955-71cc94c4dd66?ixlib=rb-4.0.3',
+                  imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
                   productCount: 0,
                   displayOrder: 5,
                 ),
@@ -266,7 +279,7 @@ class HomePage extends ConsumerWidget {
         },
       },
       {
-        'image': 'https://images.unsplash.com/photo-1582550740000-5e4f70e6e87d?ixlib=rb-4.0.3',
+        'image': 'https://images.pexels.com/photos/11721610/pexels-photo-11721610.jpeg',
         'title': 'Rent Exclusive Items',
         'subtitle': 'Special pieces for special occasions',
         'color': Colors.deepOrange,
@@ -285,7 +298,7 @@ class HomePage extends ConsumerWidget {
         'badgeColor': Colors.red,
       },
       {
-        'image': 'https://images.unsplash.com/photo-1610366398516-46da9dec5931?ixlib=rb-4.0.3',
+        'image': 'https://images.pexels.com/photos/6191709/pexels-photo-6191709.jpeg',
         'title': 'Support Local Artisans',
         'subtitle': 'Every purchase empowers our craftspeople',
         'color': Colors.purple,
@@ -298,6 +311,7 @@ class HomePage extends ConsumerWidget {
     
     return AnimationLimiter(
       child: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: AnimationConfiguration.toStaggeredList(
@@ -365,7 +379,7 @@ class HomePage extends ConsumerWidget {
                           id: 'featured',
                           name: 'Featured Products',
                           description: 'Our specially curated selection of featured products',
-                          imageUrl: 'https://images.unsplash.com/photo-1606293459339-bad3008075e1?ixlib=rb-4.0.3',
+                          imageUrl: 'https://images.pexels.com/photos/6464421/pexels-photo-6464421.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
                           productCount: 0,
                           displayOrder: 1,
                         ),
@@ -413,7 +427,7 @@ class HomePage extends ConsumerWidget {
                           id: 'new',
                           name: 'New Arrivals',
                           description: 'The latest additions to our collection',
-                          imageUrl: 'https://images.unsplash.com/photo-1590736969955-71cc94c4dd66?ixlib=rb-4.0.3',
+                          imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
                           productCount: 0,
                           displayOrder: 2,
                         ),
@@ -461,7 +475,7 @@ class HomePage extends ConsumerWidget {
                           id: 'bestseller',
                           name: 'Best Sellers',
                           description: 'Our most popular items loved by customers',
-                          imageUrl: 'https://images.unsplash.com/photo-1610366398516-46da9dec5931?ixlib=rb-4.0.3',
+                          imageUrl: 'https://images.pexels.com/photos/11721610/pexels-photo-11721610.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
                           productCount: 0,
                           displayOrder: 3,
                         ),
@@ -509,7 +523,7 @@ class HomePage extends ConsumerWidget {
                           id: 'handicrafts',
                           name: 'Handicrafts',
                           description: 'Beautiful handcrafted items from skilled artisans',
-                          imageUrl: 'https://images.unsplash.com/photo-1582550740000-5e4f70e6e87d?ixlib=rb-4.0.3',
+                          imageUrl: 'https://images.pexels.com/photos/12029653/pexels-photo-12029653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
                           productCount: 0,
                           displayOrder: 4,
                         ),
@@ -557,7 +571,7 @@ class HomePage extends ConsumerWidget {
                           id: 'traditional',
                           name: 'Traditional',
                           description: 'Timeless traditional pieces celebrating Indian heritage',
-                          imageUrl: 'https://images.unsplash.com/photo-1590736969955-71cc94c4dd66?ixlib=rb-4.0.3',
+                          imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
                           productCount: 0,
                           displayOrder: 5,
                         ),

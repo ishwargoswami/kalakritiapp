@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:animate_do/animate_do.dart';
 
 enum AnimatedNavItemType { home, category, rentals, wishlist, cart, profile }
@@ -47,27 +48,26 @@ class _AnimatedNavigationState extends State<AnimatedNavigation> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20, left: 24, right: 24),
+      child: FadeInUp(
+        duration: const Duration(milliseconds: 400),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+                spreadRadius: 1,
+              ),
+            ],
           ),
-        ],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: SafeArea(
-        child: FadeInUp(
-          duration: const Duration(milliseconds: 300),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildNavItem(
                 AnimatedNavItemType.home,
@@ -132,73 +132,65 @@ class _AnimatedNavigationState extends State<AnimatedNavigation> with SingleTick
           _controller.reset();
           _controller.forward();
           widget.onItemSelected(type);
+
+          // Add haptic feedback
+          HapticFeedback.lightImpact();
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                isSelected ? activeIcon : icon,
-                color: isSelected 
-                    ? Theme.of(context).colorScheme.primary 
-                    : Colors.grey,
-                size: 24,
-              ),
-              if (hasNotification)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      count.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected 
-                  ? Theme.of(context).colorScheme.primary 
-                  : Colors.grey,
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          if (isSelected)
-            FadeIn(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: isSelected ? 1.2 : 1.0,
               duration: const Duration(milliseconds: 200),
-              child: Container(
-                margin: const EdgeInsets.only(top: 4),
-                width: 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isSelected ? activeIcon : icon,
+                    color: isSelected 
+                        ? Theme.of(context).colorScheme.primary 
+                        : Colors.grey,
+                    size: 22,
+                  ),
+                  if (hasNotification)
+                    Positioned(
+                      top: -5,
+                      right: -5,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          count.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

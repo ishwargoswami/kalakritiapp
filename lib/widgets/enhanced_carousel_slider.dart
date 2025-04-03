@@ -103,10 +103,34 @@ class _EnhancedCarouselSliderState extends State<EnhancedCarouselSlider> {
         highlightColor: Colors.grey[100]!,
         child: Container(color: Colors.white),
       ),
-      errorWidget: (context, url, error) => const Icon(Icons.error),
+      errorWidget: (context, url, error) => Container(
+        color: (item['color'] ?? Colors.grey[200])?.withOpacity(0.3),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_not_supported_outlined,
+              color: Colors.white.withOpacity(0.8),
+              size: 36,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item['title'] ?? 'Image not available',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
+      cacheKey: 'carousel_${item['title']}',
+      memCacheWidth: 800,
     );
   }
 
