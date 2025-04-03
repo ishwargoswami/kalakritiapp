@@ -25,13 +25,20 @@ class AuthService {
       
       // Update user's last login timestamp
       if (userCredential.user != null) {
-        await _firestore.collection('users').doc(userCredential.user!.uid).update({
-          'lastLogin': FieldValue.serverTimestamp(),
-        });
+        try {
+          await _firestore.collection('users').doc(userCredential.user!.uid).update({
+            'lastLogin': FieldValue.serverTimestamp(),
+          });
+        } catch (firestoreError) {
+          // If Firestore update fails, we still want to proceed with login
+          // The user is already authenticated at this point
+          print('Firestore update failed: $firestoreError');
+        }
       }
       
       return userCredential;
     } catch (e) {
+      print('Login error: $e');
       rethrow;
     }
   }
@@ -50,32 +57,49 @@ class AuthService {
       
       // Create user document in Firestore
       if (userCredential.user != null) {
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'uid': userCredential.user!.uid,
-          'email': email,
-          'name': name,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastLogin': FieldValue.serverTimestamp(),
-        });
-        
-        // Update display name in Firebase Auth
-        await userCredential.user!.updateDisplayName(name);
+        try {
+          await _firestore.collection('users').doc(userCredential.user!.uid).set({
+            'uid': userCredential.user!.uid,
+            'email': email,
+            'name': name,
+            'createdAt': FieldValue.serverTimestamp(),
+            'lastLogin': FieldValue.serverTimestamp(),
+          });
+          
+          // Update display name in Firebase Auth
+          await userCredential.user!.updateDisplayName(name);
+        } catch (firestoreError) {
+          // If Firestore creation fails, we still want to proceed with signup
+          // The user is already created in Firebase Auth at this point
+          print('Firestore document creation failed: $firestoreError');
+        }
       }
       
       return userCredential;
     } catch (e) {
+      print('Signup error: $e');
       rethrow;
     }
   }
 
   /// Sign out the current user
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      print('Signout error: $e');
+      rethrow;
+    }
   }
 
   /// Send password reset email
   Future<void> sendPasswordResetEmail(String email) async {
-    await _auth.sendPasswordResetEmail(email: email);
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      print('Password reset error: $e');
+      rethrow;
+    }
   }
 
   /// Update user profile
@@ -92,21 +116,27 @@ class AuthService {
         await user.updatePhotoURL(photoURL);
         
         // Update Firestore document
-        final Map<String, dynamic> userData = {};
-        
-        if (displayName != null && displayName.isNotEmpty) {
-          userData['name'] = displayName;
-        }
-        
-        if (photoURL != null && photoURL.isNotEmpty) {
-          userData['photoURL'] = photoURL;
-        }
-        
-        if (userData.isNotEmpty) {
-          await _firestore.collection('users').doc(user.uid).update(userData);
+        try {
+          final Map<String, dynamic> userData = {};
+          
+          if (displayName != null && displayName.isNotEmpty) {
+            userData['name'] = displayName;
+          }
+          
+          if (photoURL != null && photoURL.isNotEmpty) {
+            userData['photoURL'] = photoURL;
+          }
+          
+          if (userData.isNotEmpty) {
+            await _firestore.collection('users').doc(user.uid).update(userData);
+          }
+        } catch (firestoreError) {
+          // If Firestore update fails, the Auth profile is still updated
+          print('Firestore profile update failed: $firestoreError');
         }
       }
     } catch (e) {
+      print('Profile update error: $e');
       rethrow;
     }
   }
@@ -117,12 +147,19 @@ class AuthService {
       final user = _auth.currentUser;
       
       if (user != null) {
-        final docSnapshot = await _firestore.collection('users').doc(user.uid).get();
-        return docSnapshot.data();
+        try {
+          final docSnapshot = await _firestore.collection('users').doc(user.uid).get();
+          return docSnapshot.data();
+        } catch (firestoreError) {
+          // If Firestore read fails, return null
+          print('Firestore read failed: $firestoreError');
+          return null;
+        }
       }
       return null;
     } catch (e) {
-      rethrow;
+      print('Getting user data error: $e');
+      return null;
     }
   }
 } 

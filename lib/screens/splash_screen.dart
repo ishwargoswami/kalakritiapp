@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:kalakritiapp/screens/auth/login_screen.dart';
 import 'package:kalakritiapp/screens/home_screen.dart';
 import 'package:kalakritiapp/screens/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,25 +55,43 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
   // Check if user is logged in and onboarding is completed
   Future<void> _checkAuthState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
-    final bool isLoggedIn = FirebaseAuth.instance.currentUser != null;
-    
-    // Wait for animation to complete
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    if (mounted) {
-      if (!onboardingCompleted) {
+    try {
+      print('Checking authentication state...');
+      final prefs = await SharedPreferences.getInstance();
+      final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+      print('Onboarding completed: $onboardingCompleted');
+      
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      final bool isLoggedIn = currentUser != null;
+      print('Is logged in: $isLoggedIn, User: ${currentUser?.uid}');
+      
+      // Wait for animation to complete
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (mounted) {
+        if (!onboardingCompleted) {
+          print('Navigating to OnboardingScreen');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+          );
+        } else if (!isLoggedIn) {
+          print('Navigating to LoginScreen');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        } else {
+          print('Navigating to HomeScreen');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error in auth state check: $e');
+      // Default to onboarding if there's an error
+      if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-        );
-      } else if (!isLoggedIn) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       }
     }

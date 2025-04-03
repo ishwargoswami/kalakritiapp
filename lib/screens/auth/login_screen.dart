@@ -39,27 +39,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
+      print('Login process started');
       // Get the AuthService from the provider
       final authService = ref.read(authServiceProvider);
       
       // Attempt login
-      await authService.signInWithEmailAndPassword(
+      final userCredential = await authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
       
-      // If successful, navigate to home
+      print('Login successful: ${userCredential.user?.uid}');
+      
+      // If successful, navigate to home screen with a slight delay to ensure Firebase auth state is updated
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        // Small delay to ensure Firebase auth state is fully updated
+        await Future.delayed(const Duration(milliseconds: 300));
+        
+        print('Navigating to HomeScreen');
+        // Use pushAndRemoveUntil to clear the navigation stack
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false, // This will clear all previous routes
         );
       }
     } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Exception: ${e.code}');
       // Handle authentication errors
       setState(() {
         _errorMessage = _getErrorMessage(e.code);
       });
     } catch (e) {
+      print('Unexpected error: $e');
       setState(() {
         _errorMessage = 'An unexpected error occurred. Please try again.';
       });
