@@ -293,7 +293,7 @@ class SellerDashboardScreen extends ConsumerWidget {
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 2.2,
+                  childAspectRatio: 2.0,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                   children: [
@@ -392,8 +392,11 @@ class SellerDashboardScreen extends ConsumerWidget {
     required Color color,
     String? subtitle,
   }) {
+    // Increase the vertical padding to accommodate potential overflow
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      // Further increase the height to fully resolve the overflow
+      height: subtitle != null ? 95 : 80,
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
@@ -405,7 +408,6 @@ class SellerDashboardScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -428,7 +430,7 @@ class SellerDashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             value,
             style: TextStyle(
@@ -438,9 +440,9 @@ class SellerDashboardScreen extends ConsumerWidget {
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 1),
-            Container(
-              width: double.infinity,
+            const SizedBox(height: 3),
+            // Wrap in a flexible widget to handle overflow gracefully
+            Flexible(
               child: Text(
                 subtitle,
                 style: TextStyle(
