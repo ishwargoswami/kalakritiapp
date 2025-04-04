@@ -247,25 +247,18 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Get data from providers
-    final featuredProductsAsync = ref.watch(featuredProductsProvider);
-    final newArrivalsAsync = ref.watch(newArrivalsProvider);
+    final featuredProductsAsync = ref.watch(productsByCategoryNameProvider('Featured'));
+    final newArrivalsAsync = ref.watch(productsByCategoryNameProvider('New Arrivals'));
+    final bestSellersAsync = ref.watch(productsByCategoryNameProvider('Best Sellers'));
     final categoriesAsync = ref.watch(categoriesProvider);
-    final bestSellersAsync = ref.watch(bestSellersProvider);
-    final handicraftsAsync = ref.watch(productsByCategoryNameProvider('Handicrafts'));
-    final traditionalAsync = ref.watch(productsByCategoryNameProvider('Traditional'));
     
     // Function to refresh all data
     Future<void> _refreshData() async {
-      // Invalidate all providers to force refresh
-      ref.invalidate(featuredProductsProvider);
-      ref.invalidate(newArrivalsProvider);
       ref.invalidate(categoriesProvider);
-      ref.invalidate(bestSellersProvider);
-      ref.invalidate(productsByCategoryNameProvider('Handicrafts'));
-      ref.invalidate(productsByCategoryNameProvider('Traditional'));
-      
-      // For StreamProviders, we need to wait a bit to ensure the data is refreshed
-      return Future.delayed(const Duration(milliseconds: 500));
+      ref.invalidate(productsByCategoryNameProvider('Featured'));
+      ref.invalidate(productsByCategoryNameProvider('New Arrivals'));
+      ref.invalidate(productsByCategoryNameProvider('Best Sellers'));
+      return Future.delayed(const Duration(seconds: 1));
     }
     
     // Carousel items
@@ -534,102 +527,6 @@ class HomePage extends ConsumerWidget {
                 SizedBox(
                   height: 280,
                   child: bestSellersAsync.when(
-                    data: (products) {
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: products.length,
-                        itemBuilder: (context, index) {
-                          return ProductCard(
-                            product: products[index],
-                            showWishlistButton: true,
-                          );
-                        },
-                      );
-                    },
-                    loading: () => _buildProductLoadingShimmer(),
-                    error: (error, stackTrace) => Center(
-                      child: Text(
-                        'Error loading products: $error',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Handicrafts section
-                SectionTitle(
-                  title: 'Handicrafts',
-                  onSeeAllPressed: () {
-                    Navigator.push(
-                      context,
-                      PageTransition(
-                        type: PageTransitionType.rightToLeft,
-                        child: const CategoryScreen(
-                          category: const Category(
-                            id: 'handicrafts',
-                            name: 'Handicrafts',
-                            description: 'Beautiful handcrafted items from skilled artisans',
-                            imageUrl: 'https://images.pexels.com/photos/12029653/pexels-photo-12029653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-                            productCount: 0,
-                            displayOrder: 4,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(
-                  height: 280,
-                  child: handicraftsAsync.when(
-                    data: (products) {
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: products.length,
-                        itemBuilder: (context, index) {
-                          return ProductCard(
-                            product: products[index],
-                            showWishlistButton: true,
-                          );
-                        },
-                      );
-                    },
-                    loading: () => _buildProductLoadingShimmer(),
-                    error: (error, stackTrace) => Center(
-                      child: Text(
-                        'Error loading products: $error',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Traditional section
-                SectionTitle(
-                  title: 'Traditional',
-                  onSeeAllPressed: () {
-                    Navigator.push(
-                      context,
-                      PageTransition(
-                        type: PageTransitionType.rightToLeft,
-                        child: const CategoryScreen(
-                          category: const Category(
-                            id: 'traditional',
-                            name: 'Traditional',
-                            description: 'Timeless traditional pieces celebrating Indian heritage',
-                            imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-                            productCount: 0,
-                            displayOrder: 5,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(
-                  height: 280,
-                  child: traditionalAsync.when(
                     data: (products) {
                       return ListView.builder(
                         scrollDirection: Axis.horizontal,

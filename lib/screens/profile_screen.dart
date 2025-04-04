@@ -4,14 +4,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kalakritiapp/models/user_model.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/screens/auth/login_screen.dart';
+import 'package:kalakritiapp/screens/buyer/edit_profile_screen.dart';
+import 'package:kalakritiapp/screens/buyer/address_screen.dart';
+import 'package:kalakritiapp/screens/buyer/orders_screen.dart';
+import 'package:kalakritiapp/screens/buyer/wishlist_screen.dart';
+import 'package:kalakritiapp/screens/buyer/rentals_screen.dart';
+import 'package:kalakritiapp/screens/buyer/reviews_screen.dart';
+import 'package:kalakritiapp/screens/admin/admin_dashboard_screen.dart';
+import 'package:kalakritiapp/screens/admin/fix_categories_screen.dart';
 import 'package:kalakritiapp/utils/theme.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _notificationsEnabled = true;
+  
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(userDataProvider);
     
     return Scaffold(
@@ -23,7 +38,7 @@ class ProfileScreen extends ConsumerWidget {
             return _buildNotLoggedIn(context);
           }
           
-          return _buildProfileContent(context, userData, ref);
+          return _buildProfileContent(context, userData);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => Center(
@@ -102,14 +117,14 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileContent(BuildContext context, UserModel userData, WidgetRef ref) {
+  Widget _buildProfileContent(BuildContext context, UserModel userData) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Profile header
-          _buildProfileHeader(context, userData, ref),
+          _buildProfileHeader(context, userData),
           const SizedBox(height: 24),
           
           // Orders, wishlist, and reviews
@@ -117,12 +132,43 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           
           // Account settings
-          _buildAccountSettings(context, ref),
+          _buildAccountSettings(context),
           const SizedBox(height: 24),
           
           // App settings
           _buildAppSettings(context),
           const SizedBox(height: 24),
+          
+          // Admin settings (only shown to admin users)
+          if (userData.isAdmin) ...[
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings),
+              title: const Text('Admin Dashboard'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminDashboardScreen(),
+                  ),
+                );
+              },
+            ),
+            
+            // Category maintenance
+            ListTile(
+              leading: const Icon(Icons.category_outlined),
+              title: const Text('Category Maintenance'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FixCategoriesScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
           
           // Sign out button
           Center(
@@ -147,7 +193,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, UserModel userData, WidgetRef ref) {
+  Widget _buildProfileHeader(BuildContext context, UserModel userData) {
     final String displayName = userData.name ?? 'User';
     final String email = userData.email ?? '';
     final String phone = userData.phoneNumber ?? '';
@@ -181,17 +227,32 @@ class ProfileScreen extends ConsumerWidget {
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: kSecondaryColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                      size: 16,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(
+                          builder: (context) => BuyerEditProfileScreen(userData: userData),
+                        ),
+                      ).then((result) {
+                        if (result == true) {
+                          // Refresh user data
+                          ref.refresh(userDataProvider);
+                        }
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: kSecondaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
                   ),
                 ),
@@ -249,12 +310,17 @@ class ProfileScreen extends ConsumerWidget {
             // Edit profile button
             OutlinedButton.icon(
               onPressed: () {
-                // TODO: Navigate to edit profile screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Edit profile functionality coming soon!'),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BuyerEditProfileScreen(userData: userData),
                   ),
-                );
+                ).then((result) {
+                  if (result == true) {
+                    // Refresh user data
+                    ref.refresh(userDataProvider);
+                  }
+                });
               },
               icon: const Icon(Icons.edit),
               label: const Text('Edit Profile'),
@@ -300,10 +366,10 @@ class ProfileScreen extends ConsumerWidget {
                     'Orders',
                     'View your order history',
                     onTap: () {
-                      // TODO: Navigate to orders screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Orders screen coming soon!'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OrdersScreen(),
                         ),
                       );
                     },
@@ -317,10 +383,10 @@ class ProfileScreen extends ConsumerWidget {
                     'Wishlist',
                     'View your saved items',
                     onTap: () {
-                      // TODO: Navigate to wishlist screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Wishlist screen coming soon!'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WishlistScreen(),
                         ),
                       );
                     },
@@ -338,10 +404,10 @@ class ProfileScreen extends ConsumerWidget {
                     'Rentals',
                     'View your rental history',
                     onTap: () {
-                      // TODO: Navigate to rentals screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Rentals screen coming soon!'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RentalsScreen(),
                         ),
                       );
                     },
@@ -355,10 +421,10 @@ class ProfileScreen extends ConsumerWidget {
                     'Reviews',
                     'Manage your product reviews',
                     onTap: () {
-                      // TODO: Navigate to reviews screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Reviews screen coming soon!'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReviewsScreen(),
                         ),
                       );
                     },
@@ -414,7 +480,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAccountSettings(BuildContext context, WidgetRef ref) {
+  Widget _buildAccountSettings(BuildContext context) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -441,12 +507,20 @@ class ProfileScreen extends ConsumerWidget {
               'Personal Information',
               'Update your personal details',
               onTap: () {
-                // TODO: Navigate to personal info screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Personal information screen coming soon!'),
+                final userData = ref.read(userDataProvider).value;
+                if (userData == null) return;
+                
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BuyerEditProfileScreen(userData: userData),
                   ),
-                );
+                ).then((result) {
+                  if (result == true) {
+                    // Refresh user data
+                    ref.refresh(userDataProvider);
+                  }
+                });
               },
             ),
             _buildSettingItem(
@@ -455,10 +529,10 @@ class ProfileScreen extends ConsumerWidget {
               'Addresses',
               'Manage your delivery addresses',
               onTap: () {
-                // TODO: Navigate to addresses screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Addresses screen coming soon!'),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddressScreen(),
                   ),
                 );
               },
@@ -482,13 +556,76 @@ class ProfileScreen extends ConsumerWidget {
               Icons.lock,
               'Change Password',
               'Update your password',
-              onTap: () {
-                // TODO: Navigate to change password screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Change password screen coming soon!'),
-                  ),
-                );
+              onTap: () async {
+                final authService = ref.read(authServiceProvider);
+                final user = authService.currentUser;
+                
+                if (user != null && user.email != null) {
+                  try {
+                    await showDialog(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Reset Password'),
+                        content: Text(
+                          'We will send a password reset link to ${user.email}. Would you like to proceed?'
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              try {
+                                Navigator.pop(dialogContext);
+                                
+                                // Show loading indicator
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Sending reset link...'), duration: Duration(seconds: 1)),
+                                );
+                                
+                                await authService.sendPasswordResetEmail(user.email!);
+                                
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Password reset link sent to ${user.email}'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            child: const Text('Send Reset Link'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('User not logged in or email not available'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -518,20 +655,35 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             
-            _buildSettingItem(
-              context,
-              Icons.notifications,
-              'Notifications',
-              'Manage your notification preferences',
-              onTap: () {
-                // TODO: Navigate to notification settings screen
+            // Notifications
+            SwitchListTile(
+              title: const Text('Push Notifications'),
+              subtitle: Text(
+                'Receive updates about your orders and promotions',
+                style: TextStyle(fontSize: 12, color: kTextColor.withOpacity(0.6)),
+              ),
+              value: _notificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _notificationsEnabled = value;
+                });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Notification settings screen coming soon!'),
+                  SnackBar(
+                    content: Text('Notifications ${value ? 'enabled' : 'disabled'}'),
+                    backgroundColor: value ? Colors.green : Colors.grey,
                   ),
                 );
+                // In a real app, you would save this preference to user settings
               },
+              secondary: Icon(
+                Icons.notifications,
+                color: _notificationsEnabled ? kPrimaryColor : Colors.grey,
+              ),
             ),
+            
+            const Divider(),
+            
+            // Language settings
             _buildSettingItem(
               context,
               Icons.language,

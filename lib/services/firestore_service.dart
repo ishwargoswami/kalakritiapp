@@ -252,18 +252,98 @@ class FirestoreService {
   // Get products by category name
   Future<List<Product>> getProductsByCategoryName(String categoryName) async {
     try {
-      final querySnapshot = await _firestore
+      // Get products where category field matches
+      final categoryMatchQuery = await _firestore
           .collection('products')
           .where('category', isEqualTo: categoryName)
-          .limit(10)
+          .get();
+          
+      // Get products where the category is in the categories array
+      final categoriesArrayQuery = await _firestore
+          .collection('products')
+          .where('categories', arrayContains: categoryName)
           .get();
       
-      return querySnapshot.docs
-          .map((doc) => Product.fromMap(doc.id, doc.data()))
-          .toList();
+      // Combine results and remove duplicates using productId
+      final Map<String, Product> uniqueProducts = {};
+      
+      // Add products from category field match
+      for (var doc in categoryMatchQuery.docs) {
+        final product = Product.fromMap(doc.id, doc.data());
+        uniqueProducts[doc.id] = product;
+      }
+      
+      // Add products from categories array match
+      for (var doc in categoriesArrayQuery.docs) {
+        final product = Product.fromMap(doc.id, doc.data());
+        uniqueProducts[doc.id] = product;
+      }
+      
+      return uniqueProducts.values.toList();
     } catch (e) {
       print('Error getting products by category name: $e');
       return [];
+    }
+  }
+
+  // Fix product categories
+  Future<void> fixProductCategories() async {
+    try {
+      // Get all products
+      final QuerySnapshot productsSnapshot = await _firestore.collection('products').get();
+      
+      // Batch for updates
+      WriteBatch batch = _firestore.batch();
+      int updates = 0;
+      
+      for (var doc in productsSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        bool needsUpdate = false;
+        Map<String, dynamic> updateData = {};
+        
+        // Ensure the product has a categories array
+        if (!data.containsKey('categories') || !(data['categories'] is List)) {
+          needsUpdate = true;
+          // If there's a category field, make it the first element in categories
+          if (data.containsKey('category') && data['category'] != null) {
+            updateData['categories'] = [data['category']];
+          } else {
+            updateData['categories'] = ['Uncategorized'];
+            updateData['category'] = 'Uncategorized';
+          }
+        }
+        
+        // Ensure the category field exists and matches the first element in categories
+        if (data.containsKey('categories') && data['categories'] is List && (data['categories'] as List).isNotEmpty) {
+          final firstCategory = (data['categories'] as List)[0].toString();
+          if (!data.containsKey('category') || data['category'] != firstCategory) {
+            needsUpdate = true;
+            updateData['category'] = firstCategory;
+          }
+        }
+        
+        // Apply updates if needed
+        if (needsUpdate) {
+          batch.update(doc.reference, updateData);
+          updates++;
+          
+          // Commit batch every 500 updates to avoid hitting limits
+          if (updates >= 500) {
+            await batch.commit();
+            batch = _firestore.batch();
+            updates = 0;
+          }
+        }
+      }
+      
+      // Commit any remaining updates
+      if (updates > 0) {
+        await batch.commit();
+      }
+      
+      print('Product categories fixed successfully');
+    } catch (e) {
+      print('Error fixing product categories: $e');
     }
   }
 } 

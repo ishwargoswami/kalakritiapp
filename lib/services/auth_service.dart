@@ -322,6 +322,8 @@ class AuthService {
     List<String>? certifications,
     List<String>? skillsAndTechniques,
     List<Map<String, dynamic>>? virtualEvents,
+    // User addresses
+    List<Map<String, dynamic>>? shippingAddresses,
   }) async {
     try {
       final user = _auth.currentUser;
@@ -358,6 +360,9 @@ class AuthService {
       if (certifications != null) updates['certifications'] = certifications;
       if (skillsAndTechniques != null) updates['skillsAndTechniques'] = skillsAndTechniques;
       if (virtualEvents != null) updates['virtualEvents'] = virtualEvents;
+      
+      // Shipping addresses
+      if (shippingAddresses != null) updates['shippingAddresses'] = shippingAddresses;
       
       // Update Firebase Auth display name if provided
       if (name != null) {

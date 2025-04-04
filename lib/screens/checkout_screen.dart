@@ -4,11 +4,13 @@ import 'package:intl/intl.dart';
 import 'package:kalakritiapp/models/cart_item.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/providers/cart_provider.dart';
-import 'package:kalakritiapp/screens/order_confirmation_screen.dart';
+import 'package:kalakritiapp/screens/buyer/address_screen.dart';
+import 'package:kalakritiapp/screens/buyer/order_success_screen.dart';
 import 'package:kalakritiapp/services/firestore_service.dart';
 import 'package:kalakritiapp/utils/theme.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Delivery address model
 class DeliveryAddress {
@@ -39,6 +41,8 @@ class DeliveryAddress {
 class PaymentMethod {
   final String id;
   final String name;
+  final IconData? icon;
+  final String description;
   final String cardNumber;
   final String expiryDate;
   final String cardType;
@@ -47,10 +51,12 @@ class PaymentMethod {
   PaymentMethod({
     required this.id,
     required this.name,
-    required this.cardNumber,
-    required this.expiryDate,
-    required this.cardType,
-    required this.isDefault,
+    this.icon,
+    this.description = '',
+    this.cardNumber = '',
+    this.expiryDate = '',
+    this.cardType = '',
+    this.isDefault = false,
   });
 }
 
@@ -120,7 +126,7 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 }
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
-  String selectedAddressId = '1'; // Default selected address
+  String? selectedAddressId; // Default selected address
   String selectedPaymentMethodId = '1'; // Default selected payment method
   bool isLoading = false;
   String? promoCode;
@@ -129,13 +135,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    // Set default selections
-    final defaultAddress = dummyAddresses.firstWhere(
-      (address) => address.isDefault,
-      orElse: () => dummyAddresses.first,
-    );
-    selectedAddressId = defaultAddress.id;
     
+    // Payment method will be set based on seller preferences later
     final defaultPayment = dummyPaymentMethods.firstWhere(
       (payment) => payment.isDefault,
       orElse: () => dummyPaymentMethods.first,
@@ -339,46 +340,126 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _buildAddressSelector() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          // Address list
-          ...dummyAddresses.map((address) => _buildAddressItem(address)),
-          
-          // Add new address button
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Navigate to add address screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Add new address functionality')),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add New Address'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: kSecondaryColor,
-                side: BorderSide(color: kSecondaryColor),
+    final userAsync = ref.watch(userDataProvider);
+    
+    return userAsync.when(
+      data: (userData) {
+        if (userData == null) {
+          return const Center(
+            child: Text('Please log in to checkout'),
+          );
+        }
+        
+        final addresses = userData.shippingAddresses;
+        
+        if (addresses.isEmpty) {
+          return Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text(
+                    'No addresses found',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddressScreen(),
+                        ),
+                      ).then((_) {
+                        setState(() {
+                          // Refresh
+                        });
+                      });
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add New Address'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kSecondaryColor,
+                      side: BorderSide(color: kSecondaryColor),
+                    ),
+                  ),
+                ],
               ),
             ),
+          );
+        }
+        
+        // If no address is selected yet, select the default or first one
+        if (selectedAddressId == null) {
+          // Find default address
+          final defaultAddressIndex = addresses.indexWhere((addr) => addr['isDefault'] == true);
+          if (defaultAddressIndex >= 0) {
+            selectedAddressId = defaultAddressIndex.toString();
+          } else if (addresses.isNotEmpty) {
+            selectedAddressId = '0'; // Select first address if no default
+          }
+        }
+        
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ],
+          child: Column(
+            children: [
+              // Address list
+              for (int i = 0; i < addresses.length; i++)
+                _buildUserAddressItem(addresses[i], i.toString()),
+              
+              // Add new address button
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddressScreen(),
+                      ),
+                    ).then((_) {
+                      setState(() {
+                        // Refresh and update selected address
+                      });
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add New Address'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kSecondaryColor,
+                    side: BorderSide(color: kSecondaryColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text('Error loading addresses: $error'),
       ),
     );
   }
-
-  Widget _buildAddressItem(DeliveryAddress address) {
-    final isSelected = selectedAddressId == address.id;
+  
+  Widget _buildUserAddressItem(Map<String, dynamic> address, String id) {
+    final isSelected = selectedAddressId == id;
     
     return InkWell(
       onTap: () {
         setState(() {
-          selectedAddressId = address.id;
+          selectedAddressId = id;
         });
       },
       child: Container(
@@ -395,15 +476,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Radio<String>(
-              value: address.id,
+              value: id,
               groupValue: selectedAddressId,
               onChanged: (value) {
                 setState(() {
-                  selectedAddressId = value!;
+                  selectedAddressId = value;
                 });
               },
               activeColor: kSecondaryColor,
             ),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,13 +493,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   Row(
                     children: [
                       Text(
-                        address.name,
+                        address['name'] ?? 'Address',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
                         ),
                       ),
-                      if (address.isDefault)
+                      if (address['isDefault'] == true)
                         Container(
                           margin: const EdgeInsets.only(left: 8),
                           padding: const EdgeInsets.symmetric(
@@ -440,27 +521,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(address.addressLine1),
-                  if (address.addressLine2.isNotEmpty) Text(address.addressLine2),
-                  Text('${address.city}, ${address.state} ${address.postalCode}'),
+                  Text(
+                    '${address['addressLine1']}\n'
+                    '${address['addressLine2'] ?? ''}\n'
+                    '${address['city']}, ${address['state']} ${address['postalCode']}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: kTextColor.withOpacity(0.7),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    address.phoneNumber,
-                    style: TextStyle(color: kTextColor.withOpacity(0.7)),
+                    'Phone: ${address['phoneNumber']}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: kTextColor.withOpacity(0.7),
+                    ),
                   ),
                 ],
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit, size: 18),
-              onPressed: () {
-                // TODO: Navigate to edit address screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit address functionality')),
-                );
-              },
-              color: kSecondaryColor,
-              splashRadius: 24,
             ),
           ],
         ),
@@ -469,36 +548,122 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _buildPaymentSelector() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          // Payment methods list
-          ...dummyPaymentMethods.map((payment) => _buildPaymentMethodItem(payment)),
-          
-          // Add new payment method button
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Navigate to add payment method screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Add new payment method functionality')),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add New Payment Method'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: kSecondaryColor,
-                side: BorderSide(color: kSecondaryColor),
+    // We need to get the seller associated with the cart items
+    final cartItems = ref.watch(cartProvider);
+    
+    if (cartItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    // For now we'll use the seller of the first item - in the future this could be modified
+    // to handle multiple sellers with separate checkout flows
+    final productId = cartItems.first.productId;
+    
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('products').doc(productId).get(),
+      builder: (context, productSnapshot) {
+        if (productSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        if (productSnapshot.hasError) {
+          return Center(child: Text('Error: ${productSnapshot.error}'));
+        }
+        
+        if (!productSnapshot.hasData || !productSnapshot.data!.exists) {
+          return const Center(child: Text('Product not found'));
+        }
+        
+        // Get the seller ID from the product
+        final productData = productSnapshot.data!.data() as Map<String, dynamic>;
+        final sellerId = productData['sellerId'] as String;
+        
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance.collection('users').doc(sellerId).get(),
+          builder: (context, sellerSnapshot) {
+            if (sellerSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            
+            if (sellerSnapshot.hasError) {
+              return Center(child: Text('Error: ${sellerSnapshot.error}'));
+            }
+            
+            if (!sellerSnapshot.hasData || !sellerSnapshot.data!.exists) {
+              return const Center(child: Text('Seller information not found'));
+            }
+            
+            final sellerData = sellerSnapshot.data!.data() as Map<String, dynamic>;
+            
+            // Check which payment methods the seller has enabled
+            final hasUpi = sellerData['upiId'] != null && (sellerData['upiId'] as String).isNotEmpty;
+            final hasBankAccount = sellerData['bankAccountNumber'] != null && 
+                                (sellerData['bankAccountNumber'] as String).isNotEmpty;
+            
+            // Create a list of available payment methods
+            final availablePaymentMethods = <PaymentMethod>[];
+            
+            if (hasUpi) {
+              availablePaymentMethods.add(PaymentMethod(
+                id: 'upi',
+                name: 'UPI',
+                icon: Icons.account_balance_wallet,
+                description: 'Pay using UPI ID: ${sellerData['upiId']}',
+              ));
+            }
+            
+            if (hasBankAccount) {
+              availablePaymentMethods.add(PaymentMethod(
+                id: 'bank',
+                name: 'Bank Transfer',
+                icon: Icons.account_balance,
+                description: 'Pay to account: ${sellerData['bankAccountNumber']} (${sellerData['bankName']})',
+              ));
+            }
+            
+            // Also add COD as a default option
+            availablePaymentMethods.add(PaymentMethod(
+              id: 'cod',
+              name: 'Cash on Delivery',
+              icon: Icons.money,
+              description: 'Pay when you receive the item',
+            ));
+            
+            // Set the first payment method as default if not already set
+            if (selectedPaymentMethodId == null && availablePaymentMethods.isNotEmpty) {
+              selectedPaymentMethodId = availablePaymentMethods.first.id;
+            }
+            
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ),
-        ],
-      ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.payment, color: kSecondaryColor),
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Payment Method',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ...availablePaymentMethods.map((method) => _buildPaymentMethodItem(method)),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -696,144 +861,182 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _placeOrder(BuildContext context, List<CartItem> cartItems, double total) async {
-    final user = ref.read(currentUserProvider);
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You must be logged in to place an order')),
-      );
-      return;
-    }
-    
-    setState(() {
-      isLoading = true;
-    });
-    
     try {
-      final firestoreService = ref.read(cartFirestoreServiceProvider);
-      
-      // Get the selected address
-      final selectedAddress = dummyAddresses.firstWhere(
-        (address) => address.id == selectedAddressId,
-      );
-      
-      // Get the selected payment method
-      final selectedPayment = dummyPaymentMethods.firstWhere(
-        (payment) => payment.id == selectedPaymentMethodId,
-      );
-      
-      // Get user info for the order
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      final userData = userDoc.data() ?? {};
-      final customerName = userData['name'] ?? user.displayName ?? 'Customer';
-      final customerEmail = userData['email'] ?? user.email ?? '';
-      
-      // Prepare items and collect seller IDs
-      final orderItems = _prepareOrderItems(cartItems);
-      
-      // Extract all unique seller IDs from items
-      final sellerIds = cartItems
-          .map((item) => item.sellerId)
-          .where((id) => id != null)
-          .toSet()
-          .toList();
-      
-      // Generate order number
-      final orderNumber = 'ORD${DateTime.now().millisecondsSinceEpoch.toString().substring(4)}';
-      
-      // Prepare order data
-      final Map<String, dynamic> orderData = {
-        'orderNumber': orderNumber,
-        'userId': user.uid,
-        'customerName': customerName,
-        'customerEmail': customerEmail,
-        'items': orderItems,
-        'shippingAddress': {
-          'name': selectedAddress.name,
-          'addressLine1': selectedAddress.addressLine1,
-          'addressLine2': selectedAddress.addressLine2,
-          'city': selectedAddress.city,
-          'state': selectedAddress.state,
-          'postalCode': selectedAddress.postalCode,
-          'phoneNumber': selectedAddress.phoneNumber,
-        },
-        'paymentMethod': selectedPayment.cardType,
-        'subtotal': total - 50.0 - (total * 0.05) + discountAmount, // Reverse calculate subtotal
-        'shippingCost': 50.0,
-        'tax': total * 0.05,
-        'total': total,
-        'orderDate': FieldValue.serverTimestamp(),
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-        'sellerIds': sellerIds, // Add seller IDs to order data
-        'isPaid': false, // For now, assume not paid
-      };
-      
-      // Create the order
-      final orderRef = await firestoreService.createOrder(orderData);
-      
-      // Clear the cart
-      await ref.read(cartProvider.notifier).clearCart();
-      
       setState(() {
-        isLoading = false;
+        isLoading = true;
       });
       
-      // Navigate to order confirmation
+      // Check if address is selected
+      if (selectedAddressId == null) {
+        _showErrorSnackbar('Please select a delivery address');
+        return;
+      }
+      
+      // Check if payment method is selected
+      if (selectedPaymentMethodId == null) {
+        _showErrorSnackbar('Please select a payment method');
+        return;
+      }
+      
+      if (cartItems.isEmpty) {
+        _showErrorSnackbar('Your cart is empty');
+        return;
+      }
+      
+      // Get the current user
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        _showErrorSnackbar('You must be logged in to place an order');
+        return;
+      }
+      
+      // Get the user data to access the selected address
+      final userSnapshot = await ref.read(userDataProvider.future);
+      if (userSnapshot == null) {
+        _showErrorSnackbar('User data not available');
+        return;
+      }
+      
+      // Get the selected address
+      final addresses = userSnapshot.shippingAddresses;
+      final selectedAddressIndex = int.parse(selectedAddressId!);
+      if (selectedAddressIndex >= addresses.length) {
+        _showErrorSnackbar('Selected address not found');
+        return;
+      }
+      
+      final selectedAddress = addresses[selectedAddressIndex];
+      
+      // Calculate cart total
+      final cartTotal = ref.read(cartTotalProvider);
+      
+      // Get a batch reference
+      final batch = FirebaseFirestore.instance.batch();
+      
+      // Create a new order document reference
+      final ordersRef = FirebaseFirestore.instance.collection('orders');
+      final newOrderRef = ordersRef.doc();
+      
+      // Group items by seller
+      final Map<String, List<CartItem>> itemsBySeller = {};
+      for (var item in cartItems) {
+        final productDoc = await FirebaseFirestore.instance
+            .collection('products')
+            .doc(item.productId)
+            .get();
+            
+        if (!productDoc.exists) {
+          _showErrorSnackbar('One of the products is no longer available');
+          setState(() {
+            isLoading = false;
+          });
+          return;
+        }
+        
+        final productData = productDoc.data() as Map<String, dynamic>;
+        final sellerId = productData['sellerId'] as String;
+        
+        if (!itemsBySeller.containsKey(sellerId)) {
+          itemsBySeller[sellerId] = [];
+        }
+        
+        itemsBySeller[sellerId]!.add(item);
+      }
+      
+      // Order data
+      final orderData = {
+        'orderId': newOrderRef.id,
+        'buyerId': currentUser.uid,
+        'orderDate': FieldValue.serverTimestamp(),
+        'totalAmount': cartTotal,
+        'status': 'pending',
+        'paymentMethod': selectedPaymentMethodId,
+        'paymentStatus': 'pending',
+        'shippingAddress': selectedAddress,
+        'items': cartItems.map((item) => item.toMap()).toList(),
+        'sellerOrders': itemsBySeller.keys.toList(),
+      };
+      
+      // Set the main order data
+      batch.set(newOrderRef, orderData);
+      
+      // Create seller-specific order documents
+      for (var sellerId in itemsBySeller.keys) {
+        final sellerItems = itemsBySeller[sellerId]!;
+        final sellerTotal = sellerItems.fold(
+          0.0,
+          (sum, item) => sum + (item.totalPrice),
+        );
+        
+        final sellerOrderRef = FirebaseFirestore.instance
+            .collection('sellerOrders')
+            .doc();
+            
+        final sellerOrderData = {
+          'sellerId': sellerId,
+          'buyerId': currentUser.uid,
+          'mainOrderId': newOrderRef.id,
+          'sellerOrderId': sellerOrderRef.id,
+          'orderDate': FieldValue.serverTimestamp(),
+          'totalAmount': sellerTotal,
+          'status': 'pending',
+          'paymentMethod': selectedPaymentMethodId,
+          'paymentStatus': 'pending',
+          'shippingAddress': selectedAddress,
+          'items': sellerItems.map((item) => item.toMap()).toList(),
+        };
+        
+        batch.set(sellerOrderRef, sellerOrderData);
+      }
+      
+      // Clear cart
+      for (var item in cartItems) {
+        final cartItemRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('cart')
+            .doc(item.id);
+            
+        batch.delete(cartItemRef);
+      }
+      
+      // Commit the batch
+      await batch.commit();
+      
+      // Clear the local cart
+      ref.read(cartProvider.notifier).clearCart();
+      
+      // Navigate to order success screen
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => OrderConfirmationScreen(
-              orderId: orderRef.id,
-              orderTotal: total,
-            ),
+            builder: (context) => OrderSuccessScreen(orderId: newOrderRef.id),
           ),
         );
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error placing order: $e')),
-      );
+      print('Error placing order: $e');
+      _showErrorSnackbar('Failed to place order: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
-
-  List<Map<String, dynamic>> _prepareOrderItems(List<CartItem> cartItems) {
-    final List<Map<String, dynamic>> items = [];
-    // Create a set to collect unique seller IDs
-    final Set<String> sellerIds = {};
-    
-    for (var item in cartItems) {
-      // Ensure we have a seller ID
-      final sellerId = item.sellerId ?? 'unknown';
-      // Add to the set of seller IDs
-      sellerIds.add(sellerId);
-      
-      final Map<String, dynamic> itemData = {
-        'productId': item.productId,
-        'name': item.productName,
-        'price': item.price,
-        'quantity': item.quantity,
-        'imageUrl': item.imageUrl,
-        'isRental': item.isRental,
-        'totalPrice': item.totalPrice,
-        'sellerId': sellerId, // Include seller ID in order item
-      };
-      
-      if (item.isRental && item.rentalStartDate != null && item.rentalEndDate != null) {
-        itemData['rentalStartDate'] = item.rentalStartDate;
-        itemData['rentalEndDate'] = item.rentalEndDate;
-        itemData['rentalDays'] = item.rentalEndDate!.difference(item.rentalStartDate!).inDays + 1;
-      }
-      
-      items.add(itemData);
-    }
-    
-    return items;
+  
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Widget _buildEmptyCart(BuildContext context) {
