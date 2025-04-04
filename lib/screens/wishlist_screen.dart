@@ -59,10 +59,11 @@ class WishlistScreen extends ConsumerWidget {
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.7,
+                childAspectRatio: 0.65,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
+              padding: const EdgeInsets.only(bottom: 16),
               itemCount: products.length,
               itemBuilder: (context, index) {
                 final product = products[index];

@@ -252,6 +252,16 @@ class FirestoreService {
   // Get products by category name
   Future<List<Product>> getProductsByCategoryName(String categoryName) async {
     try {
+      // Special handling for certain categories
+      if (categoryName == 'Featured') {
+        return getFeaturedProducts();
+      } else if (categoryName == 'New Arrivals') {
+        return getNewArrivals();
+      } else if (categoryName == 'Best Sellers') {
+        return getBestSellingProducts();
+      }
+      
+      // Regular category search
       // Get products where category field matches
       final categoryMatchQuery = await _firestore
           .collection('products')

@@ -129,10 +129,27 @@ final bestSellersProvider = StreamProvider<List<Product>>((ref) async* {
 // Provider for products by category name with auto-refresh
 final productsByCategoryNameProvider = StreamProvider.family<List<Product>, String>((ref, categoryName) async* {
   // Initial data fetch
-  yield await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+  final products = await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+  
+  // Print debug information for troubleshooting
+  if (categoryName == 'Featured' || categoryName == 'New Arrivals') {
+    print('Debug - Category: $categoryName, Found ${products.length} products');
+    for (var product in products) {
+      print('Product: ${product.name}, Category: ${product.category}, IsFeatured: ${product.isFeatured}');
+    }
+  }
+  
+  yield products;
   
   // Periodic updates
   await for (final _ in Stream.periodic(autoRefreshDuration)) {
-    yield await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+    final updatedProducts = await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+    
+    // Print debug information for troubleshooting on refresh
+    if (categoryName == 'Featured' || categoryName == 'New Arrivals') {
+      print('Debug Refresh - Category: $categoryName, Found ${updatedProducts.length} products');
+    }
+    
+    yield updatedProducts;
   }
 }); 
