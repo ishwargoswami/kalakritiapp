@@ -111,6 +111,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
           rentalStartDate: startDate,
           rentalEndDate: endDate,
           artisanName: product.artisanName,
+          sellerId: product.artisanId,
         );
 
         final docRef = await _firestore

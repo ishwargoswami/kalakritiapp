@@ -488,4 +488,94 @@ class SampleDataUtil {
       print('Error creating sample order: $e');
     }
   }
+
+  // Create a test order that immediately shows up for the seller
+  static Future<void> createTestOrder() async {
+    try {
+      final String? userId = _auth.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+      
+      // Get user information
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userData = userDoc.data() ?? {};
+      final customerName = userData['name'] ?? _auth.currentUser?.displayName ?? 'Test Customer';
+      final customerEmail = userData['email'] ?? _auth.currentUser?.email ?? 'test@example.com';
+      
+      // Get a seller product to create an order for
+      final productsSnapshot = await _firestore.collection('sellerProducts').limit(1).get();
+      
+      if (productsSnapshot.docs.isEmpty) {
+        throw Exception('No seller products found. Please add sample products first.');
+      }
+      
+      // Get the first product
+      final product = productsSnapshot.docs.first.data();
+      final productId = productsSnapshot.docs.first.id;
+      final sellerId = product['sellerId'] as String;
+      
+      // Create order items
+      final List<Map<String, dynamic>> orderItems = [
+        {
+          'id': productId,
+          'productId': productId,
+          'name': product['name'],
+          'price': (product['price'] as num).toDouble(),
+          'quantity': 1,
+          'imageUrl': (product['imageUrls'] as List)[0],
+          'sellerId': sellerId,
+          'isRental': false,
+          'totalPrice': (product['price'] as num).toDouble(),
+        }
+      ];
+      
+      // Generate a unique order number
+      final orderNumber = 'TST${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+      
+      // Calculate order totals
+      final double subtotal = (product['price'] as num).toDouble();
+      final double shipping = 50.0;
+      final double tax = subtotal * 0.18; // 18% GST
+      final double total = subtotal + shipping + tax;
+      
+      // Order data
+      final Map<String, dynamic> orderData = {
+        'orderNumber': orderNumber,
+        'userId': userId,
+        'customerName': customerName,
+        'customerEmail': customerEmail,
+        'items': orderItems,
+        'shippingAddress': {
+          'name': customerName,
+          'addressLine1': userData['address'] ?? '123 Test Street',
+          'addressLine2': '',
+          'city': userData['city'] ?? 'Mumbai',
+          'state': userData['state'] ?? 'Maharashtra',
+          'postalCode': userData['postalCode'] ?? '400001',
+          'phoneNumber': userData['phoneNumber'] ?? '9876543210',
+          'country': 'India',
+        },
+        'paymentMethod': 'Cash on Delivery',
+        'subtotal': subtotal,
+        'shippingCost': shipping,
+        'tax': tax,
+        'total': total,
+        'orderDate': FieldValue.serverTimestamp(),
+        'status': 'pending', // Critical field for seller visibility
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'sellerIds': [sellerId], // Critical field for seller visibility
+        'isPaid': false,
+      };
+      
+      // Add to orders collection
+      final orderRef = await _firestore.collection('orders').add(orderData);
+      
+      print('Test order created successfully! Order ID: ${orderRef.id}');
+    } catch (e) {
+      print('Error creating test order: $e');
+      rethrow;
+    }
+  }
 } 

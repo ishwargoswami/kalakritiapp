@@ -8,6 +8,7 @@ import 'package:kalakritiapp/screens/order_confirmation_screen.dart';
 import 'package:kalakritiapp/services/firestore_service.dart';
 import 'package:kalakritiapp/utils/theme.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Delivery address model
 class DeliveryAddress {
@@ -720,10 +721,32 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         (payment) => payment.id == selectedPaymentMethodId,
       );
       
+      // Get user info for the order
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userData = userDoc.data() ?? {};
+      final customerName = userData['name'] ?? user.displayName ?? 'Customer';
+      final customerEmail = userData['email'] ?? user.email ?? '';
+      
+      // Prepare items and collect seller IDs
+      final orderItems = _prepareOrderItems(cartItems);
+      
+      // Extract all unique seller IDs from items
+      final sellerIds = cartItems
+          .map((item) => item.sellerId)
+          .where((id) => id != null)
+          .toSet()
+          .toList();
+      
+      // Generate order number
+      final orderNumber = 'ORD${DateTime.now().millisecondsSinceEpoch.toString().substring(4)}';
+      
       // Prepare order data
       final Map<String, dynamic> orderData = {
+        'orderNumber': orderNumber,
         'userId': user.uid,
-        'items': _prepareOrderItems(cartItems),
+        'customerName': customerName,
+        'customerEmail': customerEmail,
+        'items': orderItems,
         'shippingAddress': {
           'name': selectedAddress.name,
           'addressLine1': selectedAddress.addressLine1,
@@ -733,19 +756,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           'postalCode': selectedAddress.postalCode,
           'phoneNumber': selectedAddress.phoneNumber,
         },
-        'paymentMethod': {
-          'type': selectedPayment.cardType,
-          'name': selectedPayment.name,
-          'cardNumber': selectedPayment.cardNumber,
-        },
-        'subtotal': total,
-        'shipping': 50.0,
+        'paymentMethod': selectedPayment.cardType,
+        'subtotal': total - 50.0 - (total * 0.05) + discountAmount, // Reverse calculate subtotal
+        'shippingCost': 50.0,
         'tax': total * 0.05,
-        'discount': discountAmount,
         'total': total,
-        'promoCode': promoCode,
+        'orderDate': FieldValue.serverTimestamp(),
         'status': 'pending',
-        'createdAt': DateTime.now(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'sellerIds': sellerIds, // Add seller IDs to order data
+        'isPaid': false, // For now, assume not paid
       };
       
       // Create the order
@@ -783,8 +804,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   List<Map<String, dynamic>> _prepareOrderItems(List<CartItem> cartItems) {
     final List<Map<String, dynamic>> items = [];
+    // Create a set to collect unique seller IDs
+    final Set<String> sellerIds = {};
     
     for (var item in cartItems) {
+      // Ensure we have a seller ID
+      final sellerId = item.sellerId ?? 'unknown';
+      // Add to the set of seller IDs
+      sellerIds.add(sellerId);
+      
       final Map<String, dynamic> itemData = {
         'productId': item.productId,
         'name': item.productName,
@@ -793,6 +821,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         'imageUrl': item.imageUrl,
         'isRental': item.isRental,
         'totalPrice': item.totalPrice,
+        'sellerId': sellerId, // Include seller ID in order item
       };
       
       if (item.isRental && item.rentalStartDate != null && item.rentalEndDate != null) {

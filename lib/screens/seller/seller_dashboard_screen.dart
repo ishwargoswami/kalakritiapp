@@ -71,6 +71,26 @@ class SellerDashboardScreen extends ConsumerWidget {
             tooltip: 'Orders',
           ),
           IconButton(
+            icon: const Icon(Icons.add_shopping_cart),
+            onPressed: () async {
+              try {
+                await SampleDataUtil.createTestOrder();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Test order created successfully!')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error creating test order: $e')),
+                  );
+                }
+              }
+            },
+            tooltip: 'Create Test Order',
+          ),
+          IconButton(
             icon: const Icon(Icons.data_array),
             onPressed: () => _showAddSampleDataDialog(context),
             tooltip: 'Add Sample Data',

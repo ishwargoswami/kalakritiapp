@@ -11,6 +11,7 @@ class CartItem {
   final DateTime? rentalStartDate;
   final DateTime? rentalEndDate;
   final String artisanName;
+  final String? sellerId;
 
   CartItem({
     required this.id,
@@ -23,6 +24,7 @@ class CartItem {
     this.rentalStartDate,
     this.rentalEndDate,
     required this.artisanName,
+    this.sellerId,
   });
 
   // Get total price for this item
@@ -57,6 +59,7 @@ class CartItem {
           ? (map['rentalEndDate'] as Timestamp).toDate() 
           : null,
       artisanName: map['artisanName'] ?? '',
+      sellerId: map['sellerId'],
     );
   }
 
@@ -72,6 +75,7 @@ class CartItem {
       'rentalStartDate': rentalStartDate != null ? Timestamp.fromDate(rentalStartDate!) : null,
       'rentalEndDate': rentalEndDate != null ? Timestamp.fromDate(rentalEndDate!) : null,
       'artisanName': artisanName,
+      'sellerId': sellerId,
       'updatedAt': Timestamp.now(),
     };
   }
@@ -88,6 +92,7 @@ class CartItem {
     DateTime? rentalStartDate,
     DateTime? rentalEndDate,
     String? artisanName,
+    String? sellerId,
   }) {
     return CartItem(
       id: id ?? this.id,
@@ -100,6 +105,7 @@ class CartItem {
       rentalStartDate: rentalStartDate ?? this.rentalStartDate,
       rentalEndDate: rentalEndDate ?? this.rentalEndDate,
       artisanName: artisanName ?? this.artisanName,
+      sellerId: sellerId ?? this.sellerId,
     );
   }
 } 
