@@ -11,7 +11,12 @@ import 'package:kalakritiapp/widgets/custom_text_field.dart';
 import 'package:kalakritiapp/widgets/loading_overlay.dart';
 
 class EditArtisanProfileScreen extends ConsumerStatefulWidget {
-  const EditArtisanProfileScreen({super.key});
+  final UserModel userData;
+  
+  const EditArtisanProfileScreen({
+    super.key,
+    required this.userData,
+  });
 
   @override
   ConsumerState<EditArtisanProfileScreen> createState() => _EditArtisanProfileScreenState();
@@ -87,28 +92,24 @@ class _EditArtisanProfileScreenState extends ConsumerState<EditArtisanProfileScr
   
   Future<void> _loadUserData() async {
     try {
-      final userData = await ref.read(authServiceProvider).getUserData();
-      
-      if (userData != null) {
-        setState(() {
-          _businessNameController.text = userData.businessName ?? '';
-          _businessDescriptionController.text = userData.businessDescription ?? '';
-          _businessAddressController.text = userData.businessAddress ?? '';
-          _artisanStoryController.text = userData.artisanStory ?? '';
-          _craftHistoryController.text = userData.craftHistory ?? '';
-          _yearsOfExperienceController.text = userData.yearsOfExperience?.toString() ?? '';
-          _craftRegionController.text = userData.craftRegion ?? '';
-          
-          _businessImages = userData.businessImages?.toList() ?? [];
-          _craftProcessImages = userData.craftProcessImages?.toList() ?? [];
-          _awards = userData.awards?.toList() ?? [];
-          _certifications = userData.certifications?.toList() ?? [];
-          _skillsAndTechniques = userData.skillsAndTechniques?.toList() ?? [];
-          _virtualEvents = userData.virtualEvents?.toList() ?? [];
-          
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _businessNameController.text = widget.userData.businessName ?? '';
+        _businessDescriptionController.text = widget.userData.businessDescription ?? '';
+        _businessAddressController.text = widget.userData.businessAddress ?? '';
+        _artisanStoryController.text = widget.userData.artisanStory ?? '';
+        _craftHistoryController.text = widget.userData.craftHistory ?? '';
+        _yearsOfExperienceController.text = widget.userData.yearsOfExperience?.toString() ?? '';
+        _craftRegionController.text = widget.userData.craftRegion ?? '';
+        
+        _businessImages = widget.userData.businessImages?.toList() ?? [];
+        _craftProcessImages = widget.userData.craftProcessImages?.toList() ?? [];
+        _awards = widget.userData.awards?.toList() ?? [];
+        _certifications = widget.userData.certifications?.toList() ?? [];
+        _skillsAndTechniques = widget.userData.skillsAndTechniques?.toList() ?? [];
+        _virtualEvents = widget.userData.virtualEvents?.toList() ?? [];
+        
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error loading profile data: $e';

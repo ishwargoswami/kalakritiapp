@@ -11,6 +11,8 @@ class CustomTextField extends StatelessWidget {
   final Function(String)? onChanged;
   final int? maxLines;
   final bool dense;
+  final bool readOnly;
+  final bool enabled;
 
   const CustomTextField({
     super.key,
@@ -24,6 +26,8 @@ class CustomTextField extends StatelessWidget {
     this.onChanged,
     this.maxLines = 1,
     this.dense = false,
+    this.readOnly = false,
+    this.enabled = true,
   });
 
   @override
@@ -35,6 +39,8 @@ class CustomTextField extends StatelessWidget {
       onChanged: onChanged,
       validator: validator,
       maxLines: maxLines,
+      readOnly: readOnly,
+      enabled: enabled,
       decoration: InputDecoration(
         hintText: hintText,
         labelText: labelText,

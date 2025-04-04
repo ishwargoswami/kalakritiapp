@@ -6,12 +6,21 @@ import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/screens/auth/login_screen.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
 import 'package:kalakritiapp/widgets/loading_overlay.dart';
+import 'package:kalakritiapp/screens/seller/edit_artisan_profile_screen.dart';
+import 'package:kalakritiapp/screens/seller/edit_profile_screen.dart';
+import 'package:kalakritiapp/screens/seller/edit_business_info_screen.dart';
+import 'package:kalakritiapp/services/auth_service.dart';
 
-class SellerProfileScreen extends ConsumerWidget {
+class SellerProfileScreen extends ConsumerStatefulWidget {
   const SellerProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SellerProfileScreen> createState() => _SellerProfileScreenState();
+}
+
+class _SellerProfileScreenState extends ConsumerState<SellerProfileScreen> {
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(userDataProvider);
     
     return Scaffold(
@@ -27,15 +36,89 @@ class SellerProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Profile header
-                _buildProfileHeader(context, userData, ref),
+                _buildProfileHeader(context, userData),
                 const SizedBox(height: 24),
                 
                 // Business Information
                 _buildBusinessInfo(context, userData),
                 const SizedBox(height: 24),
                 
+                // Seller specific section
+                if (userData.isSeller)
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Artisan Profile',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditArtisanProfileScreen(userData: userData),
+                                    ),
+                                  ).then((result) {
+                                    if (result == true) {
+                                      // Refresh user data if artisan profile was updated
+                                      ref.refresh(userDataProvider);
+                                    }
+                                  });
+                                },
+                                tooltip: 'Edit Artisan Profile',
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.all(8),
+                              ),
+                            ],
+                          ),
+                          const Divider(),
+                          // ...
+                          // ... Artisan profile details
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditArtisanProfileScreen(userData: userData),
+                                ),
+                              ).then((result) {
+                                if (result == true) {
+                                  // Refresh user data if artisan profile was updated
+                                  ref.refresh(userDataProvider);
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Complete Artisan Profile'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Theme.of(context).colorScheme.primary,
+                              side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                
                 // Account settings
-                _buildAccountSettings(context, ref),
+                _buildAccountSettings(context),
                 const SizedBox(height: 24),
                 
                 // App settings
@@ -131,7 +214,7 @@ class SellerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, UserModel userData, WidgetRef ref) {
+  Widget _buildProfileHeader(BuildContext context, UserModel userData) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -160,17 +243,32 @@ class SellerProfileScreen extends ConsumerWidget {
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                      size: 16,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditProfileScreen(userData: userData),
+                        ),
+                      ).then((result) {
+                        if (result == true) {
+                          // Refresh user data if profile was updated
+                          ref.refresh(userDataProvider);
+                        }
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
                   ),
                 ),
@@ -216,10 +314,17 @@ class SellerProfileScreen extends ConsumerWidget {
             // Edit Profile button
             OutlinedButton.icon(
               onPressed: () {
-                // TODO: Navigate to edit profile screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Profile coming soon')),
-                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileScreen(userData: userData),
+                  ),
+                ).then((result) {
+                  if (result == true) {
+                    // Refresh user data if profile was updated
+                    ref.refresh(userDataProvider);
+                  }
+                });
               },
               icon: const Icon(Icons.edit),
               label: const Text('Edit Profile'),
@@ -258,10 +363,17 @@ class SellerProfileScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    // TODO: Navigate to edit business info screen
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Edit Business Info coming soon')),
-                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditBusinessInfoScreen(userData: userData),
+                      ),
+                    ).then((result) {
+                      if (result == true) {
+                        // Refresh user data if business info was updated
+                        ref.refresh(userDataProvider);
+                      }
+                    });
                   },
                   tooltip: 'Edit Business Info',
                   constraints: const BoxConstraints(),
@@ -332,7 +444,7 @@ class SellerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAccountSettings(BuildContext context, WidgetRef ref) {
+  Widget _buildAccountSettings(BuildContext context) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -358,11 +470,76 @@ class SellerProfileScreen extends ConsumerWidget {
             leading: const Icon(Icons.lock_outline),
             title: const Text('Change Password'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              // TODO: Navigate to change password screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Change Password coming soon')),
-              );
+            onTap: () async {
+              final authService = ref.read(authServiceProvider);
+              final user = authService.currentUser;
+              
+              if (user != null && user.email != null) {
+                try {
+                  await showDialog(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: const Text('Reset Password'),
+                      content: Text(
+                        'We will send a password reset link to ${user.email}. Would you like to proceed?'
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            try {
+                              Navigator.pop(dialogContext);
+                              
+                              // Show loading indicator
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Sending reset link...'), duration: Duration(seconds: 1)),
+                              );
+                              
+                              await authService.sendPasswordResetEmail(user.email!);
+                              
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Password reset link sent to ${user.email}'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text('Send Reset Link'),
+                        ),
+                      ],
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('User not logged in or email not available'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
           ),
           
