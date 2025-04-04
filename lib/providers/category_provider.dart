@@ -12,7 +12,12 @@ final firestoreServiceProvider = Provider<FirestoreService>((ref) {
 final categoriesProvider = FutureProvider<List<String>>((ref) async {
   final firestoreService = ref.watch(firestoreServiceProvider);
   final categories = await firestoreService.getCategories();
-  return categories.map((cat) => cat.name).toList();
+  // Extract unique category names to prevent duplicates
+  final categoryNames = categories.map((cat) => cat.name).toList();
+  final uniqueCategories = categoryNames.toSet().toList();
+  // Sort alphabetically for better user experience
+  uniqueCategories.sort();
+  return uniqueCategories;
 });
 
 // Provider for all category objects

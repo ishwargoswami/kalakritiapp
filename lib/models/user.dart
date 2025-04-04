@@ -239,4 +239,7 @@ class UserModel {
   
   bool get isSeller => role == UserRole.seller;
   bool get isBuyer => role == UserRole.buyer;
+  
+  // Check if user is an admin - for now, we'll consider specific email or role check
+  bool get isAdmin => email == 'admin@kalakriti.com' || email.endsWith('@admin.kalakriti.com');
 } 

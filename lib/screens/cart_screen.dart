@@ -414,13 +414,18 @@ class CartScreen extends ConsumerWidget {
   Widget _buildCheckoutBar(
     BuildContext context, 
     List<CartItem> cartItems, 
-    double total,
+    double subtotal,
     WidgetRef ref
   ) {
     final formatter = NumberFormat.currency(
       symbol: '₹',
       decimalDigits: 2,
     );
+    
+    // Calculate the same way as in the cart summary
+    final tax = subtotal * 0.05;
+    final shipping = subtotal > 500 ? 0.0 : 50.0;
+    final total = subtotal + tax + shipping;
     
     return Container(
       padding: const EdgeInsets.all(16),

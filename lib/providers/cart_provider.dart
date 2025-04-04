@@ -19,10 +19,16 @@ final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
 // Cart total price provider
 final cartTotalProvider = Provider<double>((ref) {
   final cartItems = ref.watch(cartProvider);
-  return cartItems.fold(
-    0, 
-    (total, item) => total + (item.price * item.quantity)
-  );
+  
+  return cartItems.fold(0, (total, item) {
+    if (item.isRental && item.rentalStartDate != null && item.rentalEndDate != null) {
+      // For rental items, calculate based on rental duration
+      return total + item.totalRentalPrice;
+    } else {
+      // For regular purchases
+      return total + (item.price * item.quantity);
+    }
+  });
 });
 
 // Cart item count provider
