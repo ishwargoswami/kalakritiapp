@@ -9,6 +9,7 @@ import 'package:kalakritiapp/widgets/loading_overlay.dart';
 import 'package:kalakritiapp/screens/seller/edit_artisan_profile_screen.dart';
 import 'package:kalakritiapp/screens/seller/edit_profile_screen.dart';
 import 'package:kalakritiapp/screens/seller/edit_business_info_screen.dart';
+import 'package:kalakritiapp/screens/seller/edit_payment_details_screen.dart';
 import 'package:kalakritiapp/services/auth_service.dart';
 
 class SellerProfileScreen extends ConsumerStatefulWidget {
@@ -41,6 +42,10 @@ class _SellerProfileScreenState extends ConsumerState<SellerProfileScreen> {
                 
                 // Business Information
                 _buildBusinessInfo(context, userData),
+                const SizedBox(height: 24),
+                
+                // Payment Details
+                _buildPaymentDetails(context, userData),
                 const SizedBox(height: 24),
                 
                 // Seller specific section
@@ -442,6 +447,142 @@ class _SellerProfileScreenState extends ConsumerState<SellerProfileScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildPaymentDetails(BuildContext context, UserModel userData) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Payment Details',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditPaymentDetailsScreen(userData: userData),
+                      ),
+                    ).then((result) {
+                      if (result == true) {
+                        // Refresh user data if payment details were updated
+                        ref.refresh(userDataProvider);
+                      }
+                    });
+                  },
+                  tooltip: 'Edit Payment Details',
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(8),
+                ),
+              ],
+            ),
+            const Divider(),
+            
+            // Bank account details
+            ListTile(
+              leading: const Icon(Icons.account_balance),
+              title: const Text('Bank Account'),
+              subtitle: userData.bankAccountNumber != null && userData.bankAccountNumber!.isNotEmpty
+                  ? Text('${userData.bankAccountName} - ${_maskAccountNumber(userData.bankAccountNumber)}')
+                  : const Text('Not set'),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+            
+            // UPI ID
+            ListTile(
+              leading: const Icon(Icons.payments_outlined),
+              title: const Text('UPI ID'),
+              subtitle: Text(userData.upiId ?? 'Not set'),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+            
+            // Payout Method
+            ListTile(
+              leading: const Icon(Icons.credit_card),
+              title: const Text('Preferred Payout Method'),
+              subtitle: Text(userData.preferredPayoutMethod ?? 'Not set'),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Payment Information Notice
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 18,
+                        color: Colors.blue.shade700,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Payment Information',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'We process payouts every Monday. Funds typically appear in your account within 2-3 business days.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  String _maskAccountNumber(String? accountNumber) {
+    if (accountNumber == null || accountNumber.isEmpty) {
+      return '';
+    }
+    
+    // Keep only the last 4 digits visible
+    if (accountNumber.length > 4) {
+      final visiblePart = accountNumber.substring(accountNumber.length - 4);
+      final maskedPart = '*' * (accountNumber.length - 4);
+      return maskedPart + visiblePart;
+    }
+    
+    return accountNumber;
   }
 
   Widget _buildAccountSettings(BuildContext context) {

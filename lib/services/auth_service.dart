@@ -307,6 +307,12 @@ class AuthService {
     String? businessName,
     String? businessDescription,
     String? businessAddress,
+    // Payment details
+    String? bankAccountName,
+    String? bankAccountNumber,
+    String? bankIFSC,
+    String? upiId,
+    String? preferredPayoutMethod,
     // New artisan profile fields
     String? artisanStory,
     String? craftHistory,
@@ -335,6 +341,13 @@ class AuthService {
       if (businessName != null) updates['businessName'] = businessName;
       if (businessDescription != null) updates['businessDescription'] = businessDescription;
       if (businessAddress != null) updates['businessAddress'] = businessAddress;
+      
+      // Payment details
+      if (bankAccountName != null) updates['bankAccountName'] = bankAccountName;
+      if (bankAccountNumber != null) updates['bankAccountNumber'] = bankAccountNumber;
+      if (bankIFSC != null) updates['bankIFSC'] = bankIFSC;
+      if (upiId != null) updates['upiId'] = upiId;
+      if (preferredPayoutMethod != null) updates['preferredPayoutMethod'] = preferredPayoutMethod;
       
       // New artisan profile fields
       if (artisanStory != null) updates['artisanStory'] = artisanStory;

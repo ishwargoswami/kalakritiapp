@@ -20,6 +20,13 @@ class UserModel {
   final String? businessAddress;
   final bool isVerifiedSeller;
   
+  // Payment details
+  final String? bankAccountName;
+  final String? bankAccountNumber;
+  final String? bankIFSC;
+  final String? upiId;
+  final String? preferredPayoutMethod; // 'bank' or 'upi'
+  
   // New Artisan Storytelling fields
   final String? artisanStory;           // Personal story of the artisan
   final List<String>? craftProcessImages; // Images showing the craft process
@@ -47,6 +54,11 @@ class UserModel {
     this.businessImages,
     this.businessAddress,
     this.isVerifiedSeller = false,
+    this.bankAccountName,
+    this.bankAccountNumber,
+    this.bankIFSC,
+    this.upiId,
+    this.preferredPayoutMethod,
     this.artisanStory,
     this.craftProcessImages,
     this.craftHistory,
@@ -88,6 +100,11 @@ class UserModel {
           : null,
       businessAddress: data['businessAddress'],
       isVerifiedSeller: data['isVerifiedSeller'] ?? false,
+      bankAccountName: data['bankAccountName'],
+      bankAccountNumber: data['bankAccountNumber'],
+      bankIFSC: data['bankIFSC'],
+      upiId: data['upiId'],
+      preferredPayoutMethod: data['preferredPayoutMethod'],
       artisanStory: data['artisanStory'],
       craftProcessImages: data['craftProcessImages'] != null 
           ? List<String>.from(data['craftProcessImages']) 
@@ -143,6 +160,13 @@ class UserModel {
       data['virtualEvents'] = virtualEvents;
       data['skillsAndTechniques'] = skillsAndTechniques;
       data['craftRegion'] = craftRegion;
+      
+      // Add payment details
+      data['bankAccountName'] = bankAccountName;
+      data['bankAccountNumber'] = bankAccountNumber;
+      data['bankIFSC'] = bankIFSC;
+      data['upiId'] = upiId;
+      data['preferredPayoutMethod'] = preferredPayoutMethod;
     }
     
     return data;
@@ -165,6 +189,11 @@ class UserModel {
     List<String>? businessImages,
     String? businessAddress,
     bool? isVerifiedSeller,
+    String? bankAccountName,
+    String? bankAccountNumber,
+    String? bankIFSC,
+    String? upiId,
+    String? preferredPayoutMethod,
     String? artisanStory,
     List<String>? craftProcessImages,
     String? craftHistory,
@@ -191,6 +220,11 @@ class UserModel {
       businessImages: businessImages ?? this.businessImages,
       businessAddress: businessAddress ?? this.businessAddress,
       isVerifiedSeller: isVerifiedSeller ?? this.isVerifiedSeller,
+      bankAccountName: bankAccountName ?? this.bankAccountName,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+      bankIFSC: bankIFSC ?? this.bankIFSC,
+      upiId: upiId ?? this.upiId,
+      preferredPayoutMethod: preferredPayoutMethod ?? this.preferredPayoutMethod,
       artisanStory: artisanStory ?? this.artisanStory,
       craftProcessImages: craftProcessImages ?? this.craftProcessImages,
       craftHistory: craftHistory ?? this.craftHistory,
