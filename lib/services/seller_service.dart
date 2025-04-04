@@ -151,20 +151,55 @@ class SellerService {
         throw 'User not authenticated as a seller';
       }
       
-      // Get product to update
-      final productDoc = await _firestore
-          .collection(FirebaseConstants.productsCollection)
+      SellerProduct? product;
+      String? mainProductDocId;
+      
+      // First try to get product from sellerProducts collection
+      final sellerProductDoc = await _firestore
+          .collection('sellerProducts')
           .doc(productId)
           .get();
-      
-      if (!productDoc.exists) {
-        throw 'Product not found';
+          
+      if (sellerProductDoc.exists) {
+        product = SellerProduct.fromFirestore(sellerProductDoc);
+        
+        // Verify seller owns this product
+        if (product.sellerId != currentSellerId) {
+          throw 'You do not have permission to update this product';
+        }
+        
+        // Find related product in main products collection for later update
+        QuerySnapshot productsSnapshot = await _firestore
+            .collection(FirebaseConstants.productsCollection)
+            .where('productId', isEqualTo: productId)
+            .get();
+            
+        if (productsSnapshot.docs.isNotEmpty) {
+          mainProductDocId = productsSnapshot.docs.first.id;
+        }
+      } else {
+        // Fallback to products collection
+        final productDoc = await _firestore
+            .collection(FirebaseConstants.productsCollection)
+            .doc(productId)
+            .get();
+        
+        if (!productDoc.exists) {
+          throw 'Product not found in any collection';
+        }
+        
+        // We found it directly in products collection
+        product = SellerProduct.fromMap(productDoc.data()!);
+        mainProductDocId = productId;
+        
+        // Verify seller owns this product
+        if (product.sellerId != currentSellerId) {
+          throw 'You do not have permission to update this product';
+        }
       }
       
-      // Verify seller owns this product
-      final product = SellerProduct.fromMap(productDoc.data()!);
-      if (product.sellerId != currentSellerId) {
-        throw 'You do not have permission to update this product';
+      if (product == null) {
+        throw 'Failed to find product to update';
       }
       
       // Handle image uploads if new images provided
@@ -194,19 +229,57 @@ class SellerService {
       if (weight != null) updateData['weight'] = weight;
       if (material != null) updateData['material'] = material;
       if (isFeatured != null) updateData['isFeatured'] = isFeatured;
+      if (isAvailable != null) updateData['isAvailable'] = isAvailable;
       
-      // Update in Firestore
-      await _firestore
-          .collection(FirebaseConstants.productsCollection)
-          .doc(productId)
-          .update(updateData);
-          
+      // Create update data for main products collection
+      final Map<String, dynamic> buyerUpdateData = {...updateData};
+      
+      // Map fields that are named differently in the main products collection
+      if (price != null) buyerUpdateData['rentalPrice'] = price * 0.1; // 10% of price
+      if (quantity != null) buyerUpdateData['stock'] = quantity;
+      if (isAvailable != null) {
+        buyerUpdateData['isAvailableForSale'] = isAvailable;
+        buyerUpdateData['isAvailableForRent'] = isAvailable;
+      }
+      if (categories != null && categories.isNotEmpty) {
+        buyerUpdateData['categoryId'] = categories[0].toString().toLowerCase();
+        buyerUpdateData['category'] = categories[0];
+      }
+      
+      // Update in both collections if found
+      final updateTasks = <Future>[];
+      
+      // Update in sellerProducts collection if found there
+      if (sellerProductDoc.exists) {
+        updateTasks.add(
+          _firestore
+              .collection('sellerProducts')
+              .doc(productId)
+              .update(updateData)
+        );
+      }
+      
+      // Update in main products collection if found
+      if (mainProductDocId != null) {
+        updateTasks.add(
+          _firestore
+              .collection(FirebaseConstants.productsCollection)
+              .doc(mainProductDocId)
+              .update(buyerUpdateData)
+        );
+      }
+      
+      // Execute all updates
+      await Future.wait(updateTasks);
+      
       // Add to seller recent activities
       await _addRecentActivity(
         type: 'product',
         title: 'Product Updated',
         description: 'You updated product: ${name ?? product.name}',
       );
+      
+      debugPrint('Product updated successfully in all collections');
     } catch (e) {
       debugPrint('Error updating product: $e');
       rethrow;
@@ -220,14 +293,68 @@ class SellerService {
         throw 'User not authenticated as a seller';
       }
       
-      // Get product to delete
+      // First check sellerProducts collection since that's what we show in the UI
+      final sellerProductDoc = await _firestore
+          .collection('sellerProducts')
+          .doc(productId)
+          .get();
+      
+      // If found in sellerProducts, use that
+      if (sellerProductDoc.exists) {
+        final sellerProduct = SellerProduct.fromFirestore(sellerProductDoc);
+        
+        // Verify seller owns this product
+        if (sellerProduct.sellerId != currentSellerId) {
+          throw 'You do not have permission to delete this product';
+        }
+        
+        // Find related product in main products collection
+        QuerySnapshot productsSnapshot = await _firestore
+            .collection(FirebaseConstants.productsCollection)
+            .where('productId', isEqualTo: productId)
+            .get();
+        
+        // Delete from both collections
+        await _firestore.collection('sellerProducts').doc(productId).delete();
+        
+        // Delete from main products collection if found
+        for (var doc in productsSnapshot.docs) {
+          await doc.reference.delete();
+        }
+        
+        // Also delete product images from storage
+        if (sellerProduct.imageUrls.isNotEmpty) {
+          for (String imageUrl in sellerProduct.imageUrls) {
+            try {
+              if (imageUrl.contains('firebasestorage.googleapis.com')) {
+                final ref = _storage.refFromURL(imageUrl);
+                await ref.delete();
+              }
+            } catch (e) {
+              // Continue with deletion even if image deletion fails
+              debugPrint('Error deleting image: $e');
+            }
+          }
+        }
+        
+        // Add to seller recent activities
+        await _addRecentActivity(
+          type: 'product',
+          title: 'Product Deleted',
+          description: 'You deleted product: ${sellerProduct.name}',
+        );
+        
+        return;
+      }
+      
+      // Fallback to checking main products collection
       final productDoc = await _firestore
           .collection(FirebaseConstants.productsCollection)
           .doc(productId)
           .get();
       
       if (!productDoc.exists) {
-        throw 'Product not found';
+        throw 'Product not found in any collection';
       }
       
       // Verify seller owns this product
@@ -236,45 +363,105 @@ class SellerService {
         throw 'You do not have permission to delete this product';
       }
       
-      // Delete from Firestore
+      // Delete from main products collection
       await _firestore
           .collection(FirebaseConstants.productsCollection)
           .doc(productId)
           .delete();
-          
+      
+      // Also delete product images from storage
+      if (product.imageUrls.isNotEmpty) {
+        for (String imageUrl in product.imageUrls) {
+          try {
+            if (imageUrl.contains('firebasestorage.googleapis.com')) {
+              final ref = _storage.refFromURL(imageUrl);
+              await ref.delete();
+            }
+          } catch (e) {
+            // Continue with deletion even if image deletion fails
+            debugPrint('Error deleting image: $e');
+          }
+        }
+      }
+      
       // Add to seller recent activities
       await _addRecentActivity(
         type: 'product',
         title: 'Product Deleted',
         description: 'You deleted product: ${product.name}',
       );
-      
-      // TODO: Optionally delete images from storage
-      // This is left as a future improvement since Firebase Storage doesn't
-      // automatically delete files when documents are deleted
     } catch (e) {
       debugPrint('Error deleting product: $e');
       rethrow;
     }
   }
   
-  // Get product by ID
+  // Get a product by ID
   Future<SellerProduct?> getProductById(String productId) async {
     try {
-      final doc = await _firestore
+      if (!isSellerAuthenticated) {
+        throw 'User not authenticated as a seller';
+      }
+      
+      // First check sellerProducts collection since that's what we show in the UI
+      final sellerProductDoc = await _firestore
+          .collection('sellerProducts')
+          .doc(productId)
+          .get();
+      
+      // If found in sellerProducts, use that
+      if (sellerProductDoc.exists) {
+        final sellerProduct = SellerProduct.fromFirestore(sellerProductDoc);
+        
+        // Verify this belongs to the current seller
+        if (sellerProduct.sellerId != currentSellerId) {
+          throw 'You do not have permission to access this product';
+        }
+        
+        return sellerProduct;
+      }
+      
+      // Try to fetch from the products collection as fallback
+      final productDoc = await _firestore
           .collection(FirebaseConstants.productsCollection)
           .doc(productId)
           .get();
       
-      if (!doc.exists) return null;
+      if (!productDoc.exists) {
+        // Also try querying the products collection for products with productId field
+        final productsQuery = await _firestore
+            .collection(FirebaseConstants.productsCollection)
+            .where('productId', isEqualTo: productId)
+            .limit(1)
+            .get();
+            
+        if (productsQuery.docs.isEmpty) {
+          return null; // Product not found in any collection
+        }
+        
+        // Convert to SellerProduct
+        final product = SellerProduct.fromMap(productsQuery.docs.first.data());
+        
+        // Verify this belongs to the current seller
+        if (product.sellerId != currentSellerId) {
+          throw 'You do not have permission to access this product';
+        }
+        
+        return product;
+      }
       
-      final data = doc.data()!;
-      data['id'] = doc.id; // Add document ID
+      // Convert to SellerProduct
+      final product = SellerProduct.fromMap(productDoc.data()!);
       
-      return SellerProduct.fromMap(data);
+      // Verify this belongs to the current seller
+      if (product.sellerId != currentSellerId) {
+        throw 'You do not have permission to access this product';
+      }
+      
+      return product;
     } catch (e) {
-      debugPrint('Error fetching product by ID: $e');
-      return null;
+      debugPrint('Error getting product by ID: $e');
+      rethrow;
     }
   }
   

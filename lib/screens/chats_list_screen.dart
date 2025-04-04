@@ -17,6 +17,8 @@ class ChatInfo {
   final DateTime lastMessageTime;
   final int unreadCount;
   final String? otherUserPhotoURL;
+  final String? otherUserBusiness;
+  final bool isSeller;
 
   ChatInfo({
     required this.chatId,
@@ -26,6 +28,8 @@ class ChatInfo {
     required this.lastMessageTime,
     required this.unreadCount,
     this.otherUserPhotoURL,
+    this.otherUserBusiness,
+    this.isSeller = false,
   });
 
   factory ChatInfo.fromFirestore(DocumentSnapshot doc) {
@@ -40,6 +44,8 @@ class ChatInfo {
           : DateTime.now(),
       unreadCount: data['unreadCount'] ?? 0,
       otherUserPhotoURL: data['otherUserPhotoURL'],
+      otherUserBusiness: data['otherUserBusiness'],
+      isSeller: data['isSeller'] ?? false,
     );
   }
 }
@@ -65,29 +71,42 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
   void _setupChatsStream() {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _chats = [];
+        _isLoading = false;
+      });
       return;
     }
 
-    _chatsStream = FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('chats')
-        .orderBy('lastMessageTimestamp', descending: true)
-        .snapshots();
-
-    _chatsStream!.listen(
-      (snapshot) {
-        setState(() {
-          _chats = snapshot.docs.map((doc) => ChatInfo.fromFirestore(doc)).toList();
-          _isLoading = false;
-        });
-      },
-      onError: (error) {
-        print('Error fetching chats: $error');
-        setState(() => _isLoading = false);
-      },
-    );
+    try {
+      // Stream from user's chat metadata collection - this works for both sellers and buyers
+      _chatsStream = FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('chats')
+          .orderBy('lastMessageTimestamp', descending: true)
+          .snapshots();
+      
+      _chatsStream!.listen(
+        (snapshot) {
+          setState(() {
+            _chats = snapshot.docs.map((doc) => ChatInfo.fromFirestore(doc)).toList();
+            _isLoading = false;
+          });
+        },
+        onError: (error) {
+          print('Error fetching chats: $error');
+          setState(() {
+            _isLoading = false;
+          });
+        },
+      );
+    } catch (e) {
+      print('Error setting up chat stream: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _refreshChats() async {
@@ -232,13 +251,27 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
       title: Row(
         children: [
           Expanded(
-            child: Text(
-              chat.otherUserName,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  chat.otherUserName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (chat.otherUserBusiness != null && chat.otherUserBusiness!.isNotEmpty)
+                  Text(
+                    chat.otherUserBusiness!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
             ),
           ),
           Text(
@@ -250,40 +283,44 @@ class _ChatsListScreenState extends ConsumerState<ChatsListScreen> {
           ),
         ],
       ),
-      subtitle: Row(
-        children: [
-          Expanded(
-            child: Text(
-              chat.lastMessage,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: chat.unreadCount > 0
-                    ? Colors.black87
-                    : Colors.grey[600],
-                fontWeight: chat.unreadCount > 0
-                    ? FontWeight.bold
-                    : FontWeight.normal,
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                chat.lastMessage,
+                style: TextStyle(
+                  color: chat.unreadCount > 0
+                      ? Colors.black87
+                      : Colors.grey[600],
+                  fontWeight: chat.unreadCount > 0
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-          if (chat.unreadCount > 0)
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                chat.unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+            if (chat.unreadCount > 0)
+              Container(
+                margin: const EdgeInsets.only(left: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  chat.unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

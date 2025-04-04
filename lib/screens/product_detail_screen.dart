@@ -19,14 +19,20 @@ import 'package:kalakritiapp/widgets/product_reviews.dart';
 import 'package:kalakritiapp/widgets/rental_date_picker.dart';
 import 'package:shimmer/shimmer.dart';
 
-// Provider to get seller information
-final sellerProvider = FutureProvider.family<UserModel?, String>((ref, sellerId) async {
+// Provider to get seller information with auto-refresh
+final sellerProvider = StreamProvider.family<UserModel?, String>((ref, artisanId) async* {
   try {
     final authService = ref.read(authServiceProvider);
-    return await authService.getUserDataById(sellerId);
+    // Initial data fetch
+    yield await authService.getUserDataById(artisanId);
+    
+    // Periodic updates
+    await for (final _ in Stream.periodic(const Duration(minutes: 5))) {
+      yield await authService.getUserDataById(artisanId);
+    }
   } catch (e) {
     print('Error fetching seller: $e');
-    return null;
+    yield null;
   }
 });
 
@@ -60,6 +66,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       setState(() {
         _quantity--;
       });
+    }
+  }
+
+  // Function to refresh product data
+  Future<void> _refreshProductData() async {
+    // Invalidate providers to force refresh
+    ref.invalidate(productDetailsProvider(widget.productId));
+    ref.invalidate(isInWishlistProvider(widget.productId));
+    // Get the seller ID and refresh seller data too
+    final product = await ref.read(productDetailsProvider(widget.productId).future);
+    if (product != null) {
+      ref.invalidate(sellerProvider(product.artisanId));
     }
   }
 
@@ -101,11 +119,24 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     
     return Scaffold(
       backgroundColor: kBackgroundColor,
-      body: productAsync.when(
-        data: (product) => _buildProductDetails(product!, isInWishlistAsync),
-        loading: () => _buildLoadingShimmer(),
-        error: (error, stackTrace) => Center(
-          child: Text('Error: $error'),
+      body: RefreshIndicator(
+        onRefresh: _refreshProductData,
+        child: productAsync.when(
+          data: (product) => product != null 
+            ? _buildProductDetails(product, isInWishlistAsync)
+            : const Center(child: Text('Product not found')),
+          loading: () => _buildLoadingShimmer(),
+          error: (error, stackTrace) => Center(
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height,
+                child: Center(
+                  child: Text('Error: $error'),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -121,6 +152,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       children: [
         // Scrollable content
         CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(), // Important for RefreshIndicator to work
           slivers: [
             // App bar with product image
             SliverAppBar(

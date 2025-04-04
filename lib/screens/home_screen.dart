@@ -254,6 +254,20 @@ class HomePage extends ConsumerWidget {
     final handicraftsAsync = ref.watch(productsByCategoryNameProvider('Handicrafts'));
     final traditionalAsync = ref.watch(productsByCategoryNameProvider('Traditional'));
     
+    // Function to refresh all data
+    Future<void> _refreshData() async {
+      // Invalidate all providers to force refresh
+      ref.invalidate(featuredProductsProvider);
+      ref.invalidate(newArrivalsProvider);
+      ref.invalidate(categoriesProvider);
+      ref.invalidate(bestSellersProvider);
+      ref.invalidate(productsByCategoryNameProvider('Handicrafts'));
+      ref.invalidate(productsByCategoryNameProvider('Traditional'));
+      
+      // For StreamProviders, we need to wait a bit to ensure the data is refreshed
+      return Future.delayed(const Duration(milliseconds: 500));
+    }
+    
     // Carousel items
     final List<Map<String, dynamic>> carouselItems = [
       {
@@ -339,305 +353,309 @@ class HomePage extends ConsumerWidget {
       },
     ];
     
-    return AnimationLimiter(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: AnimationConfiguration.toStaggeredList(
-            duration: const Duration(milliseconds: 375),
-            childAnimationBuilder: (widget) => SlideAnimation(
-              horizontalOffset: 50.0,
-              child: FadeInAnimation(
-                child: widget,
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      child: AnimationLimiter(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(), // Important for RefreshIndicator to work
+          padding: const EdgeInsets.only(bottom: 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: AnimationConfiguration.toStaggeredList(
+              duration: const Duration(milliseconds: 375),
+              childAnimationBuilder: (widget) => SlideAnimation(
+                horizontalOffset: 50.0,
+                child: FadeInAnimation(
+                  child: widget,
+                ),
               ),
+              children: [
+                // Enhanced Carousel slider at the top
+                const SizedBox(height: 16),
+                EnhancedCarouselSlider(
+                  items: carouselItems,
+                  height: 220,
+                ),
+                
+                // Categories section with See All
+                SectionTitle(
+                  title: 'Categories',
+                  onSeeAllPressed: () {
+                    Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.fade,
+                        child: const AllCategoriesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(
+                  height: 120,
+                  child: categoriesAsync.when(
+                    data: (categories) {
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          return StringCategoryCard(categoryName: categories[index]);
+                        },
+                      );
+                    },
+                    loading: () => _buildCategoryLoadingShimmer(),
+                    error: (error, stackTrace) => Center(
+                      child: Text(
+                        'Error loading categories: $error',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Featured products section with See All
+                SectionTitle(
+                  title: 'Featured Products',
+                  onSeeAllPressed: () {
+                    Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        child: const CategoryScreen(
+                          category: const Category(
+                            id: 'featured',
+                            name: 'Featured Products',
+                            description: 'Our specially curated selection of featured products',
+                            imageUrl: 'https://images.pexels.com/photos/6464421/pexels-photo-6464421.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+                            productCount: 0,
+                            displayOrder: 1,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(
+                  height: 280,
+                  child: featuredProductsAsync.when(
+                    data: (products) {
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          return ProductCard(
+                            product: products[index],
+                            showWishlistButton: true,
+                          );
+                        },
+                      );
+                    },
+                    loading: () => _buildProductLoadingShimmer(),
+                    error: (error, stackTrace) => Center(
+                      child: Text(
+                        'Error loading products: $error',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // New arrivals section with See All
+                SectionTitle(
+                  title: 'New Arrivals',
+                  onSeeAllPressed: () {
+                    Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        child: const CategoryScreen(
+                          category: const Category(
+                            id: 'new',
+                            name: 'New Arrivals',
+                            description: 'The latest additions to our collection',
+                            imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+                            productCount: 0,
+                            displayOrder: 2,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(
+                  height: 280,
+                  child: newArrivalsAsync.when(
+                    data: (products) {
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          return ProductCard(
+                            product: products[index],
+                            showWishlistButton: true,
+                          );
+                        },
+                      );
+                    },
+                    loading: () => _buildProductLoadingShimmer(),
+                    error: (error, stackTrace) => Center(
+                      child: Text(
+                        'Error loading products: $error',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Best sellers section
+                SectionTitle(
+                  title: 'Best Sellers',
+                  onSeeAllPressed: () {
+                    Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        child: const CategoryScreen(
+                          category: const Category(
+                            id: 'bestseller',
+                            name: 'Best Sellers',
+                            description: 'Our most popular items loved by customers',
+                            imageUrl: 'https://images.pexels.com/photos/11721610/pexels-photo-11721610.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+                            productCount: 0,
+                            displayOrder: 3,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(
+                  height: 280,
+                  child: bestSellersAsync.when(
+                    data: (products) {
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          return ProductCard(
+                            product: products[index],
+                            showWishlistButton: true,
+                          );
+                        },
+                      );
+                    },
+                    loading: () => _buildProductLoadingShimmer(),
+                    error: (error, stackTrace) => Center(
+                      child: Text(
+                        'Error loading products: $error',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Handicrafts section
+                SectionTitle(
+                  title: 'Handicrafts',
+                  onSeeAllPressed: () {
+                    Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        child: const CategoryScreen(
+                          category: const Category(
+                            id: 'handicrafts',
+                            name: 'Handicrafts',
+                            description: 'Beautiful handcrafted items from skilled artisans',
+                            imageUrl: 'https://images.pexels.com/photos/12029653/pexels-photo-12029653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+                            productCount: 0,
+                            displayOrder: 4,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(
+                  height: 280,
+                  child: handicraftsAsync.when(
+                    data: (products) {
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          return ProductCard(
+                            product: products[index],
+                            showWishlistButton: true,
+                          );
+                        },
+                      );
+                    },
+                    loading: () => _buildProductLoadingShimmer(),
+                    error: (error, stackTrace) => Center(
+                      child: Text(
+                        'Error loading products: $error',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Traditional section
+                SectionTitle(
+                  title: 'Traditional',
+                  onSeeAllPressed: () {
+                    Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.rightToLeft,
+                        child: const CategoryScreen(
+                          category: const Category(
+                            id: 'traditional',
+                            name: 'Traditional',
+                            description: 'Timeless traditional pieces celebrating Indian heritage',
+                            imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+                            productCount: 0,
+                            displayOrder: 5,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(
+                  height: 280,
+                  child: traditionalAsync.when(
+                    data: (products) {
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          return ProductCard(
+                            product: products[index],
+                            showWishlistButton: true,
+                          );
+                        },
+                      );
+                    },
+                    loading: () => _buildProductLoadingShimmer(),
+                    error: (error, stackTrace) => Center(
+                      child: Text(
+                        'Error loading products: $error',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+              ],
             ),
-            children: [
-              // Enhanced Carousel slider at the top
-              const SizedBox(height: 16),
-              EnhancedCarouselSlider(
-                items: carouselItems,
-                height: 220,
-              ),
-              
-              // Categories section with See All
-              SectionTitle(
-                title: 'Categories',
-                onSeeAllPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.fade,
-                      child: const AllCategoriesScreen(),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(
-                height: 120,
-                child: categoriesAsync.when(
-                  data: (categories) {
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        return StringCategoryCard(categoryName: categories[index]);
-                      },
-                    );
-                  },
-                  loading: () => _buildCategoryLoadingShimmer(),
-                  error: (error, stackTrace) => Center(
-                    child: Text(
-                      'Error loading categories: $error',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
-              ),
-              
-              // Featured products section with See All
-              SectionTitle(
-                title: 'Featured Products',
-                onSeeAllPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: const CategoryScreen(
-                        category: const Category(
-                          id: 'featured',
-                          name: 'Featured Products',
-                          description: 'Our specially curated selection of featured products',
-                          imageUrl: 'https://images.pexels.com/photos/6464421/pexels-photo-6464421.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-                          productCount: 0,
-                          displayOrder: 1,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(
-                height: 280,
-                child: featuredProductsAsync.when(
-                  data: (products) {
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        return ProductCard(
-                          product: products[index],
-                          showWishlistButton: true,
-                        );
-                      },
-                    );
-                  },
-                  loading: () => _buildProductLoadingShimmer(),
-                  error: (error, stackTrace) => Center(
-                    child: Text(
-                      'Error loading products: $error',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
-              ),
-              
-              // New arrivals section with See All
-              SectionTitle(
-                title: 'New Arrivals',
-                onSeeAllPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: const CategoryScreen(
-                        category: const Category(
-                          id: 'new',
-                          name: 'New Arrivals',
-                          description: 'The latest additions to our collection',
-                          imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-                          productCount: 0,
-                          displayOrder: 2,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(
-                height: 280,
-                child: newArrivalsAsync.when(
-                  data: (products) {
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        return ProductCard(
-                          product: products[index],
-                          showWishlistButton: true,
-                        );
-                      },
-                    );
-                  },
-                  loading: () => _buildProductLoadingShimmer(),
-                  error: (error, stackTrace) => Center(
-                    child: Text(
-                      'Error loading products: $error',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
-              ),
-              
-              // Best sellers section
-              SectionTitle(
-                title: 'Best Sellers',
-                onSeeAllPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: const CategoryScreen(
-                        category: const Category(
-                          id: 'bestseller',
-                          name: 'Best Sellers',
-                          description: 'Our most popular items loved by customers',
-                          imageUrl: 'https://images.pexels.com/photos/11721610/pexels-photo-11721610.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-                          productCount: 0,
-                          displayOrder: 3,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(
-                height: 280,
-                child: bestSellersAsync.when(
-                  data: (products) {
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        return ProductCard(
-                          product: products[index],
-                          showWishlistButton: true,
-                        );
-                      },
-                    );
-                  },
-                  loading: () => _buildProductLoadingShimmer(),
-                  error: (error, stackTrace) => Center(
-                    child: Text(
-                      'Error loading products: $error',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
-              ),
-              
-              // Handicrafts section
-              SectionTitle(
-                title: 'Handicrafts',
-                onSeeAllPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: const CategoryScreen(
-                        category: const Category(
-                          id: 'handicrafts',
-                          name: 'Handicrafts',
-                          description: 'Beautiful handcrafted items from skilled artisans',
-                          imageUrl: 'https://images.pexels.com/photos/12029653/pexels-photo-12029653.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-                          productCount: 0,
-                          displayOrder: 4,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(
-                height: 280,
-                child: handicraftsAsync.when(
-                  data: (products) {
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        return ProductCard(
-                          product: products[index],
-                          showWishlistButton: true,
-                        );
-                      },
-                    );
-                  },
-                  loading: () => _buildProductLoadingShimmer(),
-                  error: (error, stackTrace) => Center(
-                    child: Text(
-                      'Error loading products: $error',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
-              ),
-              
-              // Traditional section
-              SectionTitle(
-                title: 'Traditional',
-                onSeeAllPressed: () {
-                  Navigator.push(
-                    context,
-                    PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: const CategoryScreen(
-                        category: const Category(
-                          id: 'traditional',
-                          name: 'Traditional',
-                          description: 'Timeless traditional pieces celebrating Indian heritage',
-                          imageUrl: 'https://images.pexels.com/photos/6192401/pexels-photo-6192401.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-                          productCount: 0,
-                          displayOrder: 5,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              SizedBox(
-                height: 280,
-                child: traditionalAsync.when(
-                  data: (products) {
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        return ProductCard(
-                          product: products[index],
-                          showWishlistButton: true,
-                        );
-                      },
-                    );
-                  },
-                  loading: () => _buildProductLoadingShimmer(),
-                  error: (error, stackTrace) => Center(
-                    child: Text(
-                      'Error loading products: $error',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-            ],
           ),
         ),
       ),

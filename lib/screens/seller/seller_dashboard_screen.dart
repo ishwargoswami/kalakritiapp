@@ -8,12 +8,14 @@ import 'package:kalakritiapp/providers/seller_service_provider.dart';
 import 'package:kalakritiapp/screens/seller/add_product_screen.dart';
 import 'package:kalakritiapp/screens/seller/edit_product_screen.dart';
 import 'package:kalakritiapp/screens/seller/orders_screen.dart';
+import 'package:kalakritiapp/screens/chats_list_screen.dart';
 import 'package:kalakritiapp/services/seller_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:kalakritiapp/utils/sample_data_util.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:flutter/rendering.dart';
+import 'package:kalakritiapp/providers/chat_provider.dart';
 
 // Advanced providers for seller analytics
 final sellerRevenueAnalyticsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
@@ -69,6 +71,54 @@ class SellerDashboardScreen extends ConsumerWidget {
               );
             },
             tooltip: 'Orders',
+          ),
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.chat_outlined),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final unreadCount = ref.watch(unreadMessagesCountProvider).asData?.value ?? 0;
+                    if (unreadCount > 0) {
+                      return Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 14,
+                            minHeight: 14,
+                          ),
+                          child: Text(
+                            unreadCount > 9 ? '9+' : unreadCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChatsListScreen(),
+                ),
+              );
+            },
+            tooltip: 'Messages',
           ),
           IconButton(
             icon: const Icon(Icons.add_shopping_cart),

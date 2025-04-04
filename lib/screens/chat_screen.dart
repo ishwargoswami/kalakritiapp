@@ -185,12 +185,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         'lastMessage': text,
         'lastMessageTimestamp': Timestamp.now(),
         'lastMessageSenderId': _currentUserId,
+        'createdAt': FieldValue.serverTimestamp(), // Add creation timestamp
+        'updatedAt': FieldValue.serverTimestamp(), // Add update timestamp
       }, SetOptions(merge: true));
 
       // Add the message to the messages subcollection
       await chatRef.collection('messages').add(message.toFirestore());
 
-      // Update the chat metadata in each user's chats subcollection
+      // Get current user's name and business info
+      DocumentSnapshot currentUserDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUserId)
+          .get();
+      
+      String currentUserName = 'User';
+      String? currentUserBusiness;
+      bool isSeller = false;
+      
+      if (currentUserDoc.exists) {
+        final userData = currentUserDoc.data() as Map<String, dynamic>?;
+        if (userData != null) {
+          currentUserName = userData['name'] ?? FirebaseAuth.instance.currentUser?.displayName ?? 'User';
+          currentUserBusiness = userData['businessName'];
+          isSeller = userData['isSeller'] ?? false;
+        }
+      }
+
+      // Update or create chat metadata in current user's chats subcollection
       final userChatsRef = FirebaseFirestore.instance
           .collection('users')
           .doc(_currentUserId)
@@ -203,9 +224,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         'otherUserName': widget.otherUserName,
         'lastMessage': text,
         'lastMessageTimestamp': Timestamp.now(),
+        'lastMessageSenderId': _currentUserId,
         'unreadCount': 0, // No unread for sender
-      });
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isSeller': isSeller, // Add seller status to help with queries
+      }, SetOptions(merge: true));
 
+      // Update or create chat metadata in other user's chats subcollection
       final otherUserChatsRef = FirebaseFirestore.instance
           .collection('users')
           .doc(widget.otherUserId)
@@ -222,20 +248,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         }
       }
 
+      // This is critical - ensure this chat appears in the other user's list
       await otherUserChatsRef.set({
         'chatId': _chatId,
         'otherUserId': _currentUserId,
-        'otherUserName': FirebaseAuth.instance.currentUser?.displayName ?? 'User',
+        'otherUserName': currentUserName,
+        'otherUserBusiness': currentUserBusiness, // Add business name if available
         'lastMessage': text,
         'lastMessageTimestamp': Timestamp.now(),
+        'lastMessageSenderId': _currentUserId,
         'unreadCount': unreadCount + 1, // Increment for recipient
-      });
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isBuyer': !isSeller, // Mark if the chat is with a buyer
+      }, SetOptions(merge: true));
     } catch (e) {
       print('Error sending message: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to send message: $e')),
       );
     }
+  }
+
+  // Get suggestion messages based on user role
+  List<String> _getSuggestionMessages() {
+    // Check if current user is the seller (using the user's role property)
+    final isSeller = _otherUser != null && !_otherUser!.isSeller;
+    
+    if (isSeller) {
+      // Seller suggestions
+      return [
+        "Thank you for your interest! How can I help you?",
+        "Would you like more details about the product?",
+        "We offer free shipping for orders above ₹1000",
+        "This item is handcrafted by skilled artisans",
+        "When would you like your order to be delivered?"
+      ];
+    } else {
+      // Buyer suggestions
+      return [
+        "Is this item in stock?",
+        "Do you offer cash on delivery?",
+        "What's the delivery time for this product?",
+        "Is customization available for this product?",
+        "Can I see more photos of this item?"
+      ];
+    }
+  }
+
+  // Send the suggested message
+  void _sendSuggestionMessage(String message) {
+    _messageController.text = message;
+    _sendMessage();
   }
 
   @override
@@ -429,62 +493,112 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, -1),
+    final suggestionMessages = _getSuggestionMessages();
+    
+    return Column(
+      children: [
+        // Suggestion chips
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            border: Border(
+              top: BorderSide(color: Colors.grey[200]!),
+            ),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                hintText: 'Type a message...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                border: OutlineInputBorder(
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: suggestionMessages.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: InkWell(
+                  onTap: () => _sendSuggestionMessage(suggestionMessages[index]),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      suggestionMessages[index],
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        
+        // Message input field (existing code)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, -1),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  decoration: InputDecoration(
+                    hintText: 'Type a message...',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                  maxLines: null,
+                  textCapitalization: TextCapitalization.sentences,
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Material(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(24),
+                child: InkWell(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-              ),
-              maxLines: null,
-              textCapitalization: TextCapitalization.sentences,
-              onSubmitted: (_) => _sendMessage(),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Material(
-            color: Theme.of(context).colorScheme.primary,
-            borderRadius: BorderRadius.circular(24),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: _sendMessage,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                child: const Icon(
-                  Icons.send,
-                  color: Colors.white,
-                  size: 24,
+                  onTap: _sendMessage,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    child: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

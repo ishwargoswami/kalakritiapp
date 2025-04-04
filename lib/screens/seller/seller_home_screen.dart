@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
+import 'package:kalakritiapp/providers/chat_provider.dart';
 import 'package:kalakritiapp/screens/auth/login_screen.dart';
+import 'package:kalakritiapp/screens/chats_list_screen.dart';
 import 'package:kalakritiapp/screens/seller/orders_screen.dart';
 import 'package:kalakritiapp/screens/seller/seller_dashboard_screen.dart';
 import 'package:kalakritiapp/screens/seller/seller_profile_screen.dart';
@@ -23,6 +25,7 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
   final List<Widget> _pages = [
     const SellerDashboardScreen(),
     const OrdersScreen(),
+    const ChatsListScreen(),
     const SellerProfileScreen(),
   ];
   
@@ -34,6 +37,9 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get unread messages count for badge
+    final unreadMessagesCount = ref.watch(unreadMessagesCountProvider).asData?.value ?? 0;
+    
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -87,16 +93,50 @@ class _SellerHomeScreenState extends ConsumerState<SellerHomeScreen> {
             curve: Curves.easeInOut,
           );
         },
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
             label: 'Orders',
           ),
+          // Messages tab with unread count badge
           BottomNavigationBarItem(
+            icon: Stack(
+              children: [
+                const Icon(Icons.chat_outlined),
+                if (unreadMessagesCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(1),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 12,
+                        minHeight: 12,
+                      ),
+                      child: Text(
+                        unreadMessagesCount > 9 ? '9+' : unreadMessagesCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            label: 'Messages',
+          ),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
           ),
