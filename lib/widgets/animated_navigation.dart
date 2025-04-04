@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:animate_do/animate_do.dart';
 
-enum AnimatedNavItemType { home, category, rentals, wishlist, cart, profile }
+enum AnimatedNavItemType { home, category, rentals, messages, wishlist, cart, profile }
 
 class AnimatedNavigation extends StatefulWidget {
   final AnimatedNavItemType selectedItem;
   final Function(AnimatedNavItemType) onItemSelected;
   final int wishlistCount;
   final int cartItemCount;
+  final int unreadMessagesCount;
 
   const AnimatedNavigation({
     Key? key,
@@ -16,6 +17,7 @@ class AnimatedNavigation extends StatefulWidget {
     required this.onItemSelected,
     this.wishlistCount = 0,
     this.cartItemCount = 0,
+    this.unreadMessagesCount = 0,
   }) : super(key: key);
 
   @override
@@ -86,6 +88,14 @@ class _AnimatedNavigationState extends State<AnimatedNavigation> with SingleTick
                 'Rentals',
                 Icons.watch_later_outlined,
                 Icons.watch_later,
+              ),
+              _buildNavItem(
+                AnimatedNavItemType.messages,
+                'Messages',
+                Icons.chat_bubble_outline,
+                Icons.chat_bubble,
+                hasNotification: widget.unreadMessagesCount > 0,
+                count: widget.unreadMessagesCount,
               ),
               _buildNavItem(
                 AnimatedNavItemType.wishlist,

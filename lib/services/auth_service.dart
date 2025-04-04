@@ -301,69 +301,63 @@ class AuthService {
 
   /// Update user profile
   Future<void> updateUserProfile({
-    String? displayName,
-    String? photoURL,
+    String? name,
     String? phoneNumber,
+    String? photoURL,
     String? businessName,
     String? businessDescription,
-    List<String>? businessImages,
     String? businessAddress,
+    // New artisan profile fields
+    String? artisanStory,
+    String? craftHistory,
+    int? yearsOfExperience,
+    String? craftRegion,
+    List<String>? awards,
+    List<String>? certifications,
+    List<String>? skillsAndTechniques,
+    List<Map<String, dynamic>>? virtualEvents,
   }) async {
     try {
       final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
       
-      if (user != null) {
-        // Update auth profile
-        if (displayName != null) {
-          await user.updateDisplayName(displayName);
-        }
-        
-        if (photoURL != null) {
-          await user.updatePhotoURL(photoURL);
-        }
-        
-        // Update Firestore document
-        try {
-          final Map<String, dynamic> userData = {};
-          
-          if (displayName != null && displayName.isNotEmpty) {
-            userData['name'] = displayName;
-          }
-          
-          if (photoURL != null && photoURL.isNotEmpty) {
-            userData['photoURL'] = photoURL;
-          }
-          
-          if (phoneNumber != null) {
-            userData['phoneNumber'] = phoneNumber;
-          }
-          
-          if (businessName != null) {
-            userData['businessName'] = businessName;
-          }
-          
-          if (businessDescription != null) {
-            userData['businessDescription'] = businessDescription;
-          }
-          
-          if (businessImages != null) {
-            userData['businessImages'] = businessImages;
-          }
-          
-          if (businessAddress != null) {
-            userData['businessAddress'] = businessAddress;
-          }
-          
-          if (userData.isNotEmpty) {
-            await _firestore.collection('users').doc(user.uid).update(userData);
-          }
-        } catch (firestoreError) {
-          // If Firestore update fails, the Auth profile is still updated
-          print('Firestore profile update failed: $firestoreError');
-        }
+      final userRef = _firestore.collection('users').doc(user.uid);
+      final updates = <String, dynamic>{};
+      
+      // Basic profile updates
+      if (name != null) updates['name'] = name;
+      if (phoneNumber != null) updates['phoneNumber'] = phoneNumber;
+      if (photoURL != null) updates['photoURL'] = photoURL;
+      
+      // Business info updates (for sellers)
+      if (businessName != null) updates['businessName'] = businessName;
+      if (businessDescription != null) updates['businessDescription'] = businessDescription;
+      if (businessAddress != null) updates['businessAddress'] = businessAddress;
+      
+      // New artisan profile fields
+      if (artisanStory != null) updates['artisanStory'] = artisanStory;
+      if (craftHistory != null) updates['craftHistory'] = craftHistory;
+      if (yearsOfExperience != null) updates['yearsOfExperience'] = yearsOfExperience;
+      if (craftRegion != null) updates['craftRegion'] = craftRegion;
+      if (awards != null) updates['awards'] = awards;
+      if (certifications != null) updates['certifications'] = certifications;
+      if (skillsAndTechniques != null) updates['skillsAndTechniques'] = skillsAndTechniques;
+      if (virtualEvents != null) updates['virtualEvents'] = virtualEvents;
+      
+      // Update Firebase Auth display name if provided
+      if (name != null) {
+        await user.updateDisplayName(name);
+      }
+      
+      // Update Firestore document
+      if (updates.isNotEmpty) {
+        updates['updatedAt'] = FieldValue.serverTimestamp();
+        await userRef.update(updates);
       }
     } catch (e) {
-      print('Profile update error: $e');
+      print('Error updating profile: $e');
       rethrow;
     }
   }
@@ -389,6 +383,20 @@ class AuthService {
       return null;
     } catch (e) {
       print('Getting user data error: $e');
+      return null;
+    }
+  }
+
+  /// Get user data by ID from Firestore
+  Future<UserModel?> getUserDataById(String userId) async {
+    try {
+      final docSnapshot = await _firestore.collection('users').doc(userId).get();
+      if (docSnapshot.exists) {
+        return UserModel.fromFirestore(docSnapshot);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching user data by ID: $e');
       return null;
     }
   }

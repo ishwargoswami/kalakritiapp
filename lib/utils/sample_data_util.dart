@@ -229,18 +229,18 @@ class SampleDataUtil {
       final userData = userDoc.data();
       final String sellerName = userData?['name'] ?? 'Sample Seller';
       
-      // Sample product data
+      // Sample product data with updated handicraft related products
       final List<Map<String, dynamic>> sampleProducts = [
         {
-          'name': 'Hand Embroidered Shawl',
-          'description': 'Exquisite hand embroidered shawl made by skilled artisans from Kashmir.',
+          'name': 'Hand Embroidered Kashmiri Shawl',
+          'description': 'Exquisite hand embroidered shawl made by skilled artisans from Kashmir. Each piece features unique floral patterns representing traditional Kashmiri craftsmanship.',
           'price': 2500.0,
           'quantity': 15,
           'imageUrls': [
             'https://images.pexels.com/photos/6193090/pexels-photo-6193090.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
             'https://images.pexels.com/photos/7260549/pexels-photo-7260549.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
           ],
-          'categories': ['Handicrafts', 'Traditional'],
+          'categories': ['Handicrafts', 'Handloom Textiles'],
           'sellerId': sellerId,
           'sellerName': sellerName,
           'isAvailable': true,
@@ -252,14 +252,14 @@ class SampleDataUtil {
           'discountPercentage': 10.0,
           'isFeatured': true,
           'viewCount': 42,
-          'orderCount': 8,
-          'averageRating': 4.7,
+          'salesCount': 8, // Changed from orderCount to salesCount
+          'rating': 4.7,
           'reviewCount': 6,
           'isApproved': true, // Auto-approve sample data
         },
         {
-          'name': 'Blue Pottery Vase',
-          'description': 'Traditional blue pottery vase handcrafted in Jaipur, featuring intricate floral designs.',
+          'name': 'Jaipur Blue Pottery Decorative Vase',
+          'description': 'Traditional blue pottery vase handcrafted in Jaipur, featuring intricate floral designs in vibrant blue and turquoise colors. Made with a special dough of quartz stone powder, glass, and gum.',
           'price': 1800.0,
           'quantity': 8,
           'imageUrls': [
@@ -274,18 +274,70 @@ class SampleDataUtil {
           'updatedAt': FieldValue.serverTimestamp(),
           'size': '30cm x 15cm',
           'weight': '1.2kg',
-          'material': 'Ceramic',
+          'material': 'Ceramic with quartz powder',
           'discountPercentage': 0.0,
           'isFeatured': true,
           'viewCount': 28,
-          'orderCount': 5,
-          'averageRating': 4.9,
+          'salesCount': 5, // Changed from orderCount to salesCount
+          'rating': 4.9,
           'reviewCount': 4,
-          'isApproved': true, // Auto-approve sample data
+          'isApproved': true,
         },
         {
-          'name': 'Wooden Elephant Sculpture',
-          'description': 'Hand-carved wooden elephant sculpture, showcasing the rich woodworking traditions of India.',
+          'name': 'Banarasi Silk Handloom Saree',
+          'description': 'Authentic Banarasi silk handloom saree with intricate gold zari work. Each saree takes up to 15 days to weave by master artisans from Varanasi.',
+          'price': 8500.0,
+          'quantity': 7,
+          'imageUrls': [
+            'https://images.pexels.com/photos/12211960/pexels-photo-12211960.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            'https://images.pexels.com/photos/1108638/pexels-photo-1108638.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
+          ],
+          'categories': ['Handloom Textiles', 'Traditional'],
+          'sellerId': sellerId,
+          'sellerName': sellerName,
+          'isAvailable': true,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'size': '5.5m x 1.1m',
+          'weight': '500g',
+          'material': 'Pure silk with gold zari work',
+          'discountPercentage': 5.0,
+          'isFeatured': true,
+          'viewCount': 65,
+          'salesCount': 12, // Changed from orderCount to salesCount
+          'rating': 4.8,
+          'reviewCount': 9,
+          'isApproved': true,
+        },
+        {
+          'name': 'Bidri Art Decorative Plate',
+          'description': 'Handcrafted Bidri art decorative plate, showcasing the ancient metal craft from Bidar, Karnataka. Made with an alloy of zinc and copper with intricate silver inlay work.',
+          'price': 3800.0,
+          'quantity': 4,
+          'imageUrls': [
+            'https://images.pexels.com/photos/6044993/pexels-photo-6044993.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+            'https://images.pexels.com/photos/6045001/pexels-photo-6045001.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
+          ],
+          'categories': ['Handicrafts', 'Home Decor'],
+          'sellerId': sellerId,
+          'sellerName': sellerName,
+          'isAvailable': true,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'size': '30cm diameter',
+          'weight': '1.5kg',
+          'material': 'Zinc-copper alloy with silver inlay',
+          'discountPercentage': 0.0,
+          'isFeatured': true,
+          'viewCount': 22,
+          'salesCount': 3, // Changed from orderCount to salesCount
+          'rating': 5.0,
+          'reviewCount': 3,
+          'isApproved': true,
+        },
+        {
+          'name': 'Rosewood Elephant Sculpture',
+          'description': 'Hand-carved rosewood elephant sculpture from Saharanpur, showcasing the rich woodworking traditions of India. Each piece is unique with intricate detailing.',
           'price': 4500.0,
           'quantity': 3,
           'imageUrls': [
@@ -304,10 +356,10 @@ class SampleDataUtil {
           'discountPercentage': 5.0,
           'isFeatured': false,
           'viewCount': 15,
-          'orderCount': 2,
-          'averageRating': 4.8,
+          'salesCount': 2, // Changed from orderCount to salesCount
+          'rating': 4.8,
           'reviewCount': 2,
-          'isApproved': true, // Auto-approve sample data
+          'isApproved': true,
         },
       ];
 
@@ -329,7 +381,7 @@ class SampleDataUtil {
           'artisanName': sellerName,
           'artisanLocation': userData?['businessAddress'] ?? 'India',
           'stock': product['quantity'],
-          'totalSales': product['orderCount'],
+          'totalSales': product['salesCount'],
         };
         
         // Add to products collection (visible to buyers)
@@ -340,6 +392,100 @@ class SampleDataUtil {
     } catch (e) {
       print('Error adding sample seller products: $e');
       rethrow;
+    }
+  }
+  
+  // Create a sample order to fix synchronization between buyer and seller
+  static Future<void> createSampleOrder() async {
+    try {
+      final String? userId = _auth.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+      
+      // Get user information
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userData = userDoc.data();
+      
+      // Get a random product from sellerProducts collection
+      final productsSnapshot = await _firestore.collection('sellerProducts').limit(3).get();
+      
+      if (productsSnapshot.docs.isEmpty) {
+        throw Exception('No products found to create sample order');
+      }
+      
+      final List<Map<String, dynamic>> orderItems = [];
+      final Set<String> sellerIds = {};
+      double subtotal = 0;
+      
+      // Create order items from products
+      for (final doc in productsSnapshot.docs) {
+        final product = doc.data();
+        final sellerId = product['sellerId'] as String;
+        sellerIds.add(sellerId);
+        
+        final price = (product['price'] as double);
+        final quantity = 1;
+        subtotal += price * quantity;
+        
+        orderItems.add({
+          'id': doc.id,
+          'productId': doc.id,
+          'name': product['name'],
+          'imageUrl': product['imageUrls'][0],
+          'price': price,
+          'quantity': quantity,
+          'sellerId': sellerId,
+          'isRental': false,
+        });
+      }
+      
+      // Create shipping address
+      final Map<String, dynamic> shippingAddress = {
+        'name': userData?['name'] ?? 'Sample Customer',
+        'addressLine1': userData?['address'] ?? '123 Sample Street',
+        'city': userData?['city'] ?? 'Mumbai',
+        'state': userData?['state'] ?? 'Maharashtra',
+        'postalCode': userData?['postalCode'] ?? '400001',
+        'country': 'India',
+        'phoneNumber': userData?['phoneNumber'] ?? '9876543210',
+      };
+      
+      // Calculate order totals
+      final shippingCost = 150.0;
+      final tax = subtotal * 0.18; // 18% GST
+      final total = subtotal + shippingCost + tax;
+      
+      // Generate order number
+      final orderNumber = 'ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 10)}';
+      
+      // Create order document
+      final orderData = {
+        'orderNumber': orderNumber,
+        'userId': userId,
+        'customerName': userData?['name'] ?? 'Sample Customer',
+        'customerEmail': userData?['email'] ?? 'sample@kalakriti.com',
+        'items': orderItems,
+        'subtotal': subtotal,
+        'shippingCost': shippingCost,
+        'tax': tax,
+        'total': total,
+        'orderDate': FieldValue.serverTimestamp(),
+        'status': 'confirmed', // Important: Setting as confirmed so it shows up in seller dashboard
+        'shippingAddress': shippingAddress,
+        'paymentMethod': 'Cash on Delivery',
+        'isPaid': false,
+        'sellerIds': sellerIds.toList(), // This is crucial for seller to see the order
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      
+      // Add to orders collection
+      await _firestore.collection('orders').add(orderData);
+      
+      print('Sample order created successfully!');
+    } catch (e) {
+      print('Error creating sample order: $e');
     }
   }
 } 

@@ -19,10 +19,9 @@ class SellerProduct {
   final double discountPercentage;
   final bool isFeatured;
   final int viewCount;
-  final int orderCount;
-  final double averageRating;
+  final int salesCount;
+  final double rating;
   final int reviewCount;
-  final String sellerName;
   final bool isApproved;
   
   SellerProduct({
@@ -44,19 +43,22 @@ class SellerProduct {
     this.discountPercentage = 0.0,
     this.isFeatured = false,
     this.viewCount = 0,
-    this.orderCount = 0,
-    this.averageRating = 0.0,
+    this.salesCount = 0,
+    this.rating = 0.0,
     this.reviewCount = 0,
-    required this.sellerName,
     this.isApproved = false,
   });
   
   // Create SellerProduct from Firestore document
   factory SellerProduct.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    
+    return SellerProduct.fromMap({...data, 'id': doc.id});
+  }
+  
+  // Create from Map
+  factory SellerProduct.fromMap(Map<String, dynamic> data) {
     return SellerProduct(
-      id: doc.id,
+      id: data['id'] ?? '',
       sellerId: data['sellerId'] ?? '',
       name: data['name'] ?? '',
       description: data['description'] ?? '',
@@ -70,10 +72,14 @@ class SellerProduct {
           : [],
       isAvailable: data['isAvailable'] ?? true,
       createdAt: data['createdAt'] != null 
-          ? (data['createdAt'] as Timestamp).toDate() 
+          ? (data['createdAt'] is Timestamp
+              ? (data['createdAt'] as Timestamp).toDate()
+              : DateTime.parse(data['createdAt']))
           : DateTime.now(),
       updatedAt: data['updatedAt'] != null 
-          ? (data['updatedAt'] as Timestamp).toDate() 
+          ? (data['updatedAt'] is Timestamp
+              ? (data['updatedAt'] as Timestamp).toDate()
+              : DateTime.parse(data['updatedAt']))
           : DateTime.now(),
       specifications: data['specifications'],
       size: data['size'],
@@ -82,16 +88,15 @@ class SellerProduct {
       discountPercentage: (data['discountPercentage'] ?? 0).toDouble(),
       isFeatured: data['isFeatured'] ?? false,
       viewCount: data['viewCount'] ?? 0,
-      orderCount: data['orderCount'] ?? 0,
-      averageRating: (data['averageRating'] ?? 0).toDouble(),
+      salesCount: data['salesCount'] ?? data['orderCount'] ?? 0,
+      rating: (data['rating'] ?? data['averageRating'] ?? 0).toDouble(),
       reviewCount: data['reviewCount'] ?? 0,
-      sellerName: data['sellerName'] ?? '',
       isApproved: data['isApproved'] ?? false,
     );
   }
   
   // Convert to Map for Firestore
-  Map<String, dynamic> toFirestore() {
+  Map<String, dynamic> toMap() {
     return {
       'sellerId': sellerId,
       'name': name,
@@ -103,17 +108,16 @@ class SellerProduct {
       'isAvailable': isAvailable,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
-      'specifications': specifications,
+      'specifications': specifications ?? {},
       'size': size,
       'weight': weight,
       'material': material,
       'discountPercentage': discountPercentage,
       'isFeatured': isFeatured,
       'viewCount': viewCount,
-      'orderCount': orderCount,
-      'averageRating': averageRating,
+      'salesCount': salesCount,
+      'rating': rating,
       'reviewCount': reviewCount,
-      'sellerName': sellerName,
       'isApproved': isApproved,
     };
   }
@@ -126,6 +130,18 @@ class SellerProduct {
   
   // Check if product is in stock
   bool get inStock => quantity > 0 && isAvailable;
+  
+  // Formatted rating display (e.g., "4.5 (10 reviews)")
+  String get ratingDisplay {
+    return "$rating${reviewCount > 0 ? ' (${reviewCount} reviews)' : ''}";
+  }
+  
+  // Get inventory status
+  String get inventoryStatus {
+    if (quantity <= 0) return 'Out of Stock';
+    if (quantity < 5) return 'Low Stock';
+    return 'In Stock';
+  }
   
   // Create a copy with updated properties
   SellerProduct copyWith({
@@ -147,10 +163,9 @@ class SellerProduct {
     double? discountPercentage,
     bool? isFeatured,
     int? viewCount,
-    int? orderCount,
-    double? averageRating,
+    int? salesCount,
+    double? rating,
     int? reviewCount,
-    String? sellerName,
     bool? isApproved,
   }) {
     return SellerProduct(
@@ -172,10 +187,9 @@ class SellerProduct {
       discountPercentage: discountPercentage ?? this.discountPercentage,
       isFeatured: isFeatured ?? this.isFeatured,
       viewCount: viewCount ?? this.viewCount,
-      orderCount: orderCount ?? this.orderCount,
-      averageRating: averageRating ?? this.averageRating,
+      salesCount: salesCount ?? this.salesCount,
+      rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
-      sellerName: sellerName ?? this.sellerName,
       isApproved: isApproved ?? this.isApproved,
     );
   }

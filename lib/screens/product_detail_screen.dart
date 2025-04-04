@@ -5,10 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kalakritiapp/models/cart_item.dart';
 import 'package:kalakritiapp/models/product.dart';
+import 'package:kalakritiapp/models/user.dart';
 import 'package:kalakritiapp/providers/auth_provider.dart';
 import 'package:kalakritiapp/providers/cart_provider.dart';
 import 'package:kalakritiapp/providers/product_provider.dart';
 import 'package:kalakritiapp/providers/wishlist_provider.dart';
+import 'package:kalakritiapp/screens/artisan_profile_screen.dart';
 import 'package:kalakritiapp/screens/checkout_screen.dart';
 import 'package:kalakritiapp/services/firestore_service.dart';
 import 'package:kalakritiapp/utils/theme.dart';
@@ -16,6 +18,17 @@ import 'package:kalakritiapp/widgets/custom_button.dart';
 import 'package:kalakritiapp/widgets/product_reviews.dart';
 import 'package:kalakritiapp/widgets/rental_date_picker.dart';
 import 'package:shimmer/shimmer.dart';
+
+// Provider to get seller information
+final sellerProvider = FutureProvider.family<UserModel?, String>((ref, sellerId) async {
+  try {
+    final authService = ref.read(authServiceProvider);
+    return await authService.getUserDataById(sellerId);
+  } catch (e) {
+    print('Error fetching seller: $e');
+    return null;
+  }
+});
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -332,61 +345,16 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         ),
                         const SizedBox(height: 24),
                         
-                        // Artisan info
-                        Card(
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                  child: const Icon(Icons.person, color: Colors.white),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Crafted by ${product.artisanName}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      if (product.artisanLocation.isNotEmpty)
-                                        Text(
-                                          product.artisanLocation,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                OutlinedButton(
-                                  onPressed: () {
-                                    // TODO: View artisan profile
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Artisan profile coming soon'),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('View Profile'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        // Seller/Artisan Information
+                        const SizedBox(height: 24),
+                        const Divider(),
                         const SizedBox(height: 16),
+                        _buildArtisanSection(product.artisanId),
                         
                         // Description
+                        const SizedBox(height: 24),
+                        const Divider(),
+                        const SizedBox(height: 16),
                         const Text(
                           'Description',
                           style: TextStyle(
@@ -394,7 +362,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 8),
                         Text(
                           product.description,
                           style: TextStyle(
@@ -756,6 +723,103 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildArtisanSection(String artisanId) {
+    final sellerAsync = ref.watch(sellerProvider(artisanId));
+    
+    return sellerAsync.when(
+      data: (seller) {
+        if (seller == null) {
+          return const SizedBox.shrink();
+        }
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Artisan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ArtisanProfileScreen(
+                      artisanId: seller.uid,
+                      artisanName: seller.name,
+                    ),
+                  ),
+                );
+              },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: seller.photoURL != null
+                        ? CachedNetworkImageProvider(seller.photoURL!)
+                        : null,
+                    child: seller.photoURL == null
+                        ? const Icon(Icons.person, color: Colors.grey)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          seller.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (seller.businessName != null && seller.businessName!.isNotEmpty)
+                          Text(
+                            seller.businessName!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        if (seller.artisanStory != null && seller.artisanStory!.isNotEmpty)
+                          Text(
+                            'Tap to view artisan story',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 } 

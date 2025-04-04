@@ -8,8 +8,15 @@ final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService();
 });
 
-// Provider for all categories
-final categoriesProvider = FutureProvider<List<Category>>((ref) async {
+// Provider for category names (as strings)
+final categoriesProvider = FutureProvider<List<String>>((ref) async {
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  final categories = await firestoreService.getCategories();
+  return categories.map((cat) => cat.name).toList();
+});
+
+// Provider for all category objects
+final allCategoriesProvider = FutureProvider<List<Category>>((ref) async {
   final firestoreService = ref.watch(firestoreServiceProvider);
   return firestoreService.getCategories();
 });

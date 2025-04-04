@@ -190,11 +190,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               children: [
                 // App logo or image
                 Center(
-                  child: CachedNetworkImage(
-                    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/kalakriti-app-396115.appspot.com/o/app_assets%2Fkalakriti_logo.png?alt=media',
-                    placeholder: (context, url) => const CircularProgressIndicator(),
-                    errorWidget: (context, url, error) => const Icon(Icons.image),
-                    height: 100,
+                  child: Text(
+                    'कलाकृति',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -485,20 +487,24 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       const SizedBox(height: 16),
                       
                       // Google sign-in button
-                      OutlinedButton.icon(
-                        icon: CachedNetworkImage(
-                          imageUrl: 'https://firebasestorage.googleapis.com/v0/b/kalakriti-app-396115.appspot.com/o/app_assets%2Fgoogle_logo.png?alt=media',
-                          height: 24,
-                        ),
-                        label: const Text('Sign up with Google'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          icon: Icon(
+                            Icons.g_mobiledata,
+                            size: 24,
+                            color: Colors.red,
                           ),
-                          side: BorderSide(color: Colors.grey[300]!),
+                          label: const Text('Sign up with Google'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            side: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          onPressed: _signInWithGoogle,
                         ),
-                        onPressed: _signInWithGoogle,
                       ),
                     ],
                   ),

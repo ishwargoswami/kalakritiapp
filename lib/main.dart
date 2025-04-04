@@ -14,9 +14,15 @@ import 'package:kalakritiapp/utils/theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Explicitly enable screenshots
+  // Configure system UI and enable screenshots
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   
+  // Allow screenshots for all screens including seller dashboard
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   try {
     // Initialize Firebase with options
     await Firebase.initializeApp(

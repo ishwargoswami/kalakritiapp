@@ -13,12 +13,23 @@ class UserModel {
   final List<String> favoriteProducts;
   final List<Map<String, dynamic>> shippingAddresses;
   
-  // Seller specific fields
+  // Enhanced Seller/Artisan specific fields
   final String? businessName;
   final String? businessDescription;
   final List<String>? businessImages;
   final String? businessAddress;
   final bool isVerifiedSeller;
+  
+  // New Artisan Storytelling fields
+  final String? artisanStory;           // Personal story of the artisan
+  final List<String>? craftProcessImages; // Images showing the craft process
+  final String? craftHistory;           // History/tradition of their craft
+  final int? yearsOfExperience;         // Years of experience in the craft
+  final List<String>? awards;           // Awards or recognitions received
+  final List<String>? certifications;   // Certifications or qualifications
+  final List<Map<String, dynamic>>? virtualEvents; // Upcoming or past virtual events
+  final List<String>? skillsAndTechniques; // Specific skills and techniques
+  final String? craftRegion;            // Region where the craft originates
   
   UserModel({
     required this.uid,
@@ -36,6 +47,15 @@ class UserModel {
     this.businessImages,
     this.businessAddress,
     this.isVerifiedSeller = false,
+    this.artisanStory,
+    this.craftProcessImages,
+    this.craftHistory,
+    this.yearsOfExperience,
+    this.awards,
+    this.certifications,
+    this.virtualEvents,
+    this.skillsAndTechniques,
+    this.craftRegion,
   });
   
   // Create UserModel from Firestore document
@@ -68,6 +88,25 @@ class UserModel {
           : null,
       businessAddress: data['businessAddress'],
       isVerifiedSeller: data['isVerifiedSeller'] ?? false,
+      artisanStory: data['artisanStory'],
+      craftProcessImages: data['craftProcessImages'] != null 
+          ? List<String>.from(data['craftProcessImages']) 
+          : null,
+      craftHistory: data['craftHistory'],
+      yearsOfExperience: data['yearsOfExperience'],
+      awards: data['awards'] != null 
+          ? List<String>.from(data['awards']) 
+          : null,
+      certifications: data['certifications'] != null 
+          ? List<String>.from(data['certifications']) 
+          : null,
+      virtualEvents: data['virtualEvents'] != null 
+          ? List<Map<String, dynamic>>.from(data['virtualEvents']) 
+          : null,
+      skillsAndTechniques: data['skillsAndTechniques'] != null 
+          ? List<String>.from(data['skillsAndTechniques']) 
+          : null,
+      craftRegion: data['craftRegion'],
     );
   }
   
@@ -93,6 +132,17 @@ class UserModel {
       data['businessImages'] = businessImages;
       data['businessAddress'] = businessAddress;
       data['isVerifiedSeller'] = isVerifiedSeller;
+      
+      // Add the new artisan storytelling fields
+      data['artisanStory'] = artisanStory;
+      data['craftProcessImages'] = craftProcessImages;
+      data['craftHistory'] = craftHistory;
+      data['yearsOfExperience'] = yearsOfExperience;
+      data['awards'] = awards;
+      data['certifications'] = certifications;
+      data['virtualEvents'] = virtualEvents;
+      data['skillsAndTechniques'] = skillsAndTechniques;
+      data['craftRegion'] = craftRegion;
     }
     
     return data;
@@ -115,6 +165,15 @@ class UserModel {
     List<String>? businessImages,
     String? businessAddress,
     bool? isVerifiedSeller,
+    String? artisanStory,
+    List<String>? craftProcessImages,
+    String? craftHistory,
+    int? yearsOfExperience,
+    List<String>? awards,
+    List<String>? certifications,
+    List<Map<String, dynamic>>? virtualEvents,
+    List<String>? skillsAndTechniques,
+    String? craftRegion,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -132,6 +191,15 @@ class UserModel {
       businessImages: businessImages ?? this.businessImages,
       businessAddress: businessAddress ?? this.businessAddress,
       isVerifiedSeller: isVerifiedSeller ?? this.isVerifiedSeller,
+      artisanStory: artisanStory ?? this.artisanStory,
+      craftProcessImages: craftProcessImages ?? this.craftProcessImages,
+      craftHistory: craftHistory ?? this.craftHistory,
+      yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
+      awards: awards ?? this.awards,
+      certifications: certifications ?? this.certifications,
+      virtualEvents: virtualEvents ?? this.virtualEvents,
+      skillsAndTechniques: skillsAndTechniques ?? this.skillsAndTechniques,
+      craftRegion: craftRegion ?? this.craftRegion,
     );
   }
   

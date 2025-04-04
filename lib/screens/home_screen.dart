@@ -25,6 +25,7 @@ import 'package:kalakritiapp/screens/search_screen.dart';
 import 'package:kalakritiapp/screens/seller/seller_home_screen.dart';
 import 'package:kalakritiapp/screens/wishlist_screen.dart';
 import 'package:kalakritiapp/screens/all_categories_screen.dart';
+import 'package:kalakritiapp/screens/chats_list_screen.dart';
 import 'package:kalakritiapp/services/auth_service.dart';
 import 'package:kalakritiapp/utils/theme.dart';
 import 'package:kalakritiapp/widgets/animated_navigation.dart';
@@ -37,6 +38,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:kalakritiapp/utils/sample_data_util.dart';
+import 'package:kalakritiapp/providers/chat_provider.dart';
+import 'package:kalakritiapp/widgets/string_category_card.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -125,6 +128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       const _PageWithBottomPadding(child: HomePage()),
       const _PageWithBottomPadding(child: AllCategoriesScreen()),
       const _PageWithBottomPadding(child: RentalsScreen()),
+      const _PageWithBottomPadding(child: ChatsListScreen()),
       const _PageWithBottomPadding(child: WishlistScreen()),
       const _PageWithBottomPadding(child: CartScreen()),
       const _PageWithBottomPadding(child: ProfileScreen()),
@@ -132,6 +136,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     
     final wishlistCount = ref.watch(wishlistCountProvider);
     final cartItemCount = ref.watch(cartItemCountProvider);
+    final unreadMessagesCountAsyncValue = ref.watch(unreadMessagesCountProvider);
+    final unreadMessagesCount = unreadMessagesCountAsyncValue.when(
+      data: (count) => count,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
     
     return Scaffold(
       appBar: _currentIndex == 0 ? AppBar(
@@ -206,6 +216,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
               onItemSelected: _onNavItemTapped,
               wishlistCount: wishlistCount,
               cartItemCount: cartItemCount,
+              unreadMessagesCount: unreadMessagesCount,
             ),
           ),
         ],
@@ -371,7 +382,7 @@ class HomePage extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: categories.length,
                       itemBuilder: (context, index) {
-                        return CategoryCard(category: categories[index]);
+                        return StringCategoryCard(categoryName: categories[index]);
                       },
                     );
                   },

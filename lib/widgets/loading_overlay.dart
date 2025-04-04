@@ -3,20 +3,14 @@ import 'package:flutter/material.dart';
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
-  final Color? overlayColor;
-  final Color? spinnerColor;
-  final double opacity;
-  final String? loadingText;
+  final String? message;
 
   const LoadingOverlay({
-    super.key,
+    Key? key,
     required this.isLoading,
     required this.child,
-    this.overlayColor,
-    this.spinnerColor,
-    this.opacity = 0.5,
-    this.loadingText,
-  });
+    this.message,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,28 +18,25 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Positioned.fill(
-            child: Container(
-              color: (overlayColor ?? Colors.black).withOpacity(opacity),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(
-                      color: spinnerColor ?? Theme.of(context).colorScheme.primary,
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            width: double.infinity,
+            height: double.infinity,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                  if (message != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      message!,
+                      style: const TextStyle(color: Colors.white),
                     ),
-                    if (loadingText != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        loadingText!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
             ),
           ),

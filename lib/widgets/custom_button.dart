@@ -8,34 +8,34 @@ class CustomButton extends StatelessWidget {
   final Color? textColor;
   final double? width;
   final double height;
-  final bool isOutlined;
-  final IconData? icon;
   final bool isLoading;
+  final IconData? icon;
+  final bool isOutlined;
   final bool isFullWidth;
-  final double borderRadius;
   final Widget? leadingIcon;
   final Widget? trailingIcon;
+  final double borderRadius;
 
   const CustomButton({
-    super.key,
+    Key? key,
     required this.text,
     required this.onPressed,
     this.backgroundColor,
     this.textColor,
     this.width,
-    this.height = 50,
-    this.isOutlined = false,
-    this.icon,
+    this.height = 50.0,
     this.isLoading = false,
+    this.icon,
+    this.isOutlined = false,
     this.isFullWidth = false,
-    this.borderRadius = 12,
     this.leadingIcon,
     this.trailingIcon,
-  });
+    this.borderRadius = 12,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = backgroundColor ?? kPrimaryColor;
+    final Color bgColor = backgroundColor ?? Theme.of(context).colorScheme.primary;
     final Color txtColor = textColor ?? (isOutlined ? bgColor : Colors.white);
     final double btnWidth = isFullWidth ? double.infinity : (width ?? 180);
     
@@ -50,7 +50,6 @@ class CustomButton extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(borderRadius),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
           ),
           child: _buildButtonContent(txtColor),
         ),
@@ -64,12 +63,10 @@ class CustomButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: bgColor,
             foregroundColor: txtColor,
-            elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(borderRadius),
             ),
-            disabledBackgroundColor: Colors.grey[400],
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            elevation: 2,
           ),
           child: _buildButtonContent(txtColor),
         ),
@@ -80,32 +77,30 @@ class CustomButton extends StatelessWidget {
   Widget _buildButtonContent(Color txtColor) {
     if (isLoading) {
       return SizedBox(
-        height: 20,
-        width: 20,
+        width: 24,
+        height: 24,
         child: CircularProgressIndicator(
-          strokeWidth: 2,
+          strokeWidth: 2.0,
           valueColor: AlwaysStoppedAnimation<Color>(txtColor),
         ),
       );
     }
-    
+
     // If we have custom leading/trailing widgets
     if (leadingIcon != null || trailingIcon != null) {
       return Row(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (leadingIcon != null) ...[
             leadingIcon!,
             const SizedBox(width: 8),
           ],
-          Flexible(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
           ),
           if (trailingIcon != null) ...[
@@ -115,36 +110,33 @@ class CustomButton extends StatelessWidget {
         ],
       );
     }
-    
-    // If we have an icon from IconData
+
+    // If we have an icon
     if (icon != null) {
       return Row(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 18),
+          Icon(icon),
           const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
       );
     }
-    
+
     // Simple text button
     return Text(
       text,
       style: TextStyle(
-        fontWeight: FontWeight.bold,
         fontSize: 16,
+        fontWeight: FontWeight.bold,
       ),
-      textAlign: TextAlign.center,
     );
   }
 } 

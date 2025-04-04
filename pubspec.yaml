@@ -38,7 +38,7 @@ dependencies:
   # UI
   google_fonts: ^6.2.0
   shimmer: ^3.0.0
-  cached_network_image: ^3.3.1
+  cached_network_image: ^3.4.0
   flutter_svg: ^2.0.10+1
   smooth_page_indicator: ^1.1.0
   table_calendar: ^3.0.9
@@ -65,6 +65,10 @@ dependencies:
   page_transition: ^2.2.1
   flutter_staggered_animations: ^1.1.1
   animate_do: ^4.2.0
+  url_launcher: ^6.3.1
+  fl_chart: ^0.70.2
+  timeago: ^3.2.2
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:

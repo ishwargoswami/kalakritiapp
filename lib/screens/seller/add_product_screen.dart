@@ -436,21 +436,24 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                       // Category selector
                       categoriesAsync.when(
                         data: (categories) {
+                          if (categories.isEmpty) {
+                            return const Text('No categories available');
+                          }
+                          
                           return Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: categories.map((category) {
-                              final isSelected = _selectedCategories.contains(category.name);
-                              
+                              final isSelected = _selectedCategories.contains(category);
                               return FilterChip(
+                                label: Text(category),
                                 selected: isSelected,
-                                label: Text(category.name),
                                 onSelected: (selected) {
                                   setState(() {
                                     if (selected) {
-                                      _selectedCategories.add(category.name);
+                                      _selectedCategories.add(category);
                                     } else {
-                                      _selectedCategories.remove(category.name);
+                                      _selectedCategories.remove(category);
                                     }
                                   });
                                 },
