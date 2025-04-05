@@ -266,8 +266,8 @@ class FirestoreService {
   // Get user orders
   Future<QuerySnapshot> getUserOrders(String userId) async {
     return await _ordersCollection
-        .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
+        .where('buyerId', isEqualTo: userId)
+        .orderBy('orderDate', descending: true)
         .get();
   }
 
