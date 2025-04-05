@@ -89,7 +89,62 @@ class FirestoreService {
     final QuerySnapshot snapshot = await _categoriesCollection
         .orderBy('displayOrder')
         .get();
+    
+    // If no categories exist, create default ones
+    if (snapshot.docs.isEmpty) {
+      await _createDefaultCategories();
+      return getCategories(); // Fetch again after creating defaults
+    }
+    
     return snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList();
+  }
+
+  // Create default categories if none exist
+  Future<void> _createDefaultCategories() async {
+    final defaultCategories = [
+      {
+        'name': 'Pottery',
+        'imageUrl': 'https://example.com/pottery.jpg',
+        'description': 'Handcrafted pottery items',
+        'productCount': 0,
+        'displayOrder': 1,
+      },
+      {
+        'name': 'Textiles',
+        'imageUrl': 'https://example.com/textiles.jpg',
+        'description': 'Handwoven textiles and fabrics',
+        'productCount': 0,
+        'displayOrder': 2,
+      },
+      {
+        'name': 'Jewelry',
+        'imageUrl': 'https://example.com/jewelry.jpg',
+        'description': 'Handmade jewelry items',
+        'productCount': 0,
+        'displayOrder': 3,
+      },
+      {
+        'name': 'Woodwork',
+        'imageUrl': 'https://example.com/woodwork.jpg',
+        'description': 'Hand-carved wooden items',
+        'productCount': 0,
+        'displayOrder': 4,
+      },
+      {
+        'name': 'Painting',
+        'imageUrl': 'https://example.com/painting.jpg',
+        'description': 'Hand-painted artworks',
+        'productCount': 0,
+        'displayOrder': 5,
+      }
+    ];
+
+    // Add default categories to Firestore
+    for (final category in defaultCategories) {
+      await _categoriesCollection.add(category);
+    }
+    
+    print('Default categories created');
   }
 
   // Get category by ID

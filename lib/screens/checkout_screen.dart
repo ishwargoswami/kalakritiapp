@@ -955,6 +955,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         'shippingAddress': selectedAddress,
         'items': cartItems.map((item) => item.toMap()).toList(),
         'sellerOrders': itemsBySeller.keys.toList(),
+        'sellerIds': itemsBySeller.keys.toList(),
       };
       
       // Set the main order data

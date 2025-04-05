@@ -437,7 +437,22 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                       categoriesAsync.when(
                         data: (categories) {
                           if (categories.isEmpty) {
-                            return const Text('No categories available');
+                            return Column(
+                              children: [
+                                const Text(
+                                  'No categories available. Please try again in a moment.',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    // Refresh categories
+                                    ref.refresh(categoriesProvider);
+                                  },
+                                  child: const Text('Refresh Categories'),
+                                ),
+                              ],
+                            );
                           }
                           
                           return Wrap(
