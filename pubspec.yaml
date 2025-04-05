@@ -70,6 +70,9 @@ dependencies:
   timeago: ^3.2.2
   rxdart: ^0.28.0
 
+  # AR/3D Model Viewing
+  model_viewer_plus: ^1.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -99,6 +102,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/animations/
+    - assets/models/
   #   - images/a_dot_ham.jpeg
 
 # The following section is specific to Flutter packages.

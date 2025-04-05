@@ -1,0 +1,20 @@
+// Automatically set namespace for ar_flutter_plugin that doesn't have one
+// This file needs to be included in your settings.gradle file
+
+gradle.beforeProject { project ->
+    // Check if this is the AR Flutter Plugin project
+    if (project.path == ':ar_flutter_plugin') {
+        // Set up a callback to be executed after the project is evaluated
+        project.afterEvaluate {
+            if (project.plugins.hasPlugin('com.android.library')) {
+                def androidExtension = project.extensions.getByName('android')
+                
+                // Add namespace only if it doesn't already have one
+                if (!androidExtension.hasProperty('namespace') || androidExtension.namespace == null) {
+                    androidExtension.namespace = 'io.carius.lars.ar_flutter_plugin'
+                    println "Added namespace 'io.carius.lars.ar_flutter_plugin' to project ${project.path}"
+                }
+            }
+        }
+    }
+} 

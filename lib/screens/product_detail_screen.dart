@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kalakritiapp/models/cart_item.dart';
 import 'package:kalakritiapp/models/product.dart';
@@ -12,6 +13,7 @@ import 'package:kalakritiapp/providers/product_provider.dart';
 import 'package:kalakritiapp/providers/wishlist_provider.dart';
 import 'package:kalakritiapp/screens/artisan_profile_screen.dart';
 import 'package:kalakritiapp/screens/checkout_screen.dart';
+import 'package:kalakritiapp/screens/buyer/product_ar_view.dart';
 import 'package:kalakritiapp/services/firestore_service.dart';
 import 'package:kalakritiapp/utils/theme.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
@@ -221,6 +223,24 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   },
                 ),
                 const SizedBox(width: 16),
+                IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.view_in_ar, color: kPrimaryColor),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductARView(productId: product.id),
+                      ),
+                    );
+                  },
+                ),
               ],
               flexibleSpace: FlexibleSpaceBar(
                 background: CachedNetworkImage(

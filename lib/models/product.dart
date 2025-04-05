@@ -20,6 +20,8 @@ class Product {
   final String artisanName;
   final String artisanLocation;
   final int stock;
+  final String? arModelUrl;
+  final bool hasARModel;
 
   Product({
     required this.id,
@@ -41,6 +43,8 @@ class Product {
     required this.artisanName,
     this.artisanLocation = '',
     required this.stock,
+    this.arModelUrl,
+    this.hasARModel = false,
   });
 
   // Create Product from Firestore document
@@ -69,6 +73,8 @@ class Product {
       artisanName: data['artisanName'] ?? '',
       artisanLocation: data['artisanLocation'] ?? '',
       stock: data['stock'] ?? 0,
+      arModelUrl: data['arModelUrl'],
+      hasARModel: data['arModelUrl'] != null,
     );
   }
 
@@ -96,6 +102,8 @@ class Product {
       artisanName: data['artisanName'] ?? '',
       artisanLocation: data['artisanLocation'] ?? '',
       stock: data['stock'] ?? 0,
+      arModelUrl: data['arModelUrl'],
+      hasARModel: data['arModelUrl'] != null,
     );
   }
 
@@ -120,6 +128,8 @@ class Product {
       'artisanName': artisanName,
       'artisanLocation': artisanLocation,
       'stock': stock,
+      'arModelUrl': arModelUrl,
+      'hasARModel': arModelUrl != null,
     };
   }
 
@@ -144,6 +154,8 @@ class Product {
     String? artisanName,
     String? artisanLocation,
     int? stock,
+    String? arModelUrl,
+    bool? hasARModel,
   }) {
     return Product(
       id: id ?? this.id,
@@ -165,6 +177,8 @@ class Product {
       artisanName: artisanName ?? this.artisanName,
       artisanLocation: artisanLocation ?? this.artisanLocation,
       stock: stock ?? this.stock,
+      arModelUrl: arModelUrl ?? this.arModelUrl,
+      hasARModel: hasARModel ?? this.hasARModel,
     );
   }
 } 

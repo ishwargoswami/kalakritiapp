@@ -23,3 +23,6 @@ plugins {
 }
 
 include(":app")
+
+// Apply the namespace fix for ar_flutter_plugin
+apply(from = "namespace-fix.gradle")

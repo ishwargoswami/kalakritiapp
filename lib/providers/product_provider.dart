@@ -15,47 +15,87 @@ final firestoreServiceProvider = Provider<FirestoreService>((ref) {
 // Auto-refresh timer duration
 const autoRefreshDuration = Duration(minutes: 2);
 
+// Function to add AR model to products
+List<Product> _enrichProductsWithARModel(List<Product> products) {
+  const String defaultModelPath = 'assets/models/alien_flowers.glb';
+  
+  return products.map((product) {
+    // If product doesn't have an AR model, add the default one
+    if (product.arModelUrl == null) {
+      return product.copyWith(
+        arModelUrl: defaultModelPath,
+        hasARModel: true,
+      );
+    }
+    return product;
+  }).toList();
+}
+
+// Single product enrichment function
+Product? _enrichProductWithARModel(Product? product) {
+  if (product == null) return null;
+  
+  const String defaultModelPath = 'assets/models/alien_flowers.glb';
+  
+  // If product doesn't have an AR model, add the default one
+  if (product.arModelUrl == null) {
+    return product.copyWith(
+      arModelUrl: defaultModelPath,
+      hasARModel: true,
+    );
+  }
+  return product;
+}
+
 // Provider for featured products with auto-refresh
 final featuredProductsProvider = StreamProvider<List<Product>>((ref) async* {
   // Initial data fetch
-  yield await ref.read(firestoreServiceProvider).getFeaturedProducts();
+  var products = await ref.read(firestoreServiceProvider).getFeaturedProducts();
+  yield _enrichProductsWithARModel(products);
   
   // Periodic updates
   await for (final _ in Stream.periodic(autoRefreshDuration)) {
-    yield await ref.read(firestoreServiceProvider).getFeaturedProducts();
+    products = await ref.read(firestoreServiceProvider).getFeaturedProducts();
+    yield _enrichProductsWithARModel(products);
   }
 });
 
 // Provider for new arrivals with auto-refresh
 final newArrivalsProvider = StreamProvider<List<Product>>((ref) async* {
   // Initial data fetch
-  yield await ref.read(firestoreServiceProvider).getNewArrivals();
+  var products = await ref.read(firestoreServiceProvider).getNewArrivals();
+  yield _enrichProductsWithARModel(products);
   
   // Periodic updates
   await for (final _ in Stream.periodic(autoRefreshDuration)) {
-    yield await ref.read(firestoreServiceProvider).getNewArrivals();
+    products = await ref.read(firestoreServiceProvider).getNewArrivals();
+    yield _enrichProductsWithARModel(products);
   }
 });
 
 // Provider for all products with auto-refresh
 final productsProvider = StreamProvider<List<Product>>((ref) async* {
   // Initial data fetch
-  yield await ref.read(firestoreServiceProvider).getProducts();
+  var products = await ref.read(firestoreServiceProvider).getProducts();
+  yield _enrichProductsWithARModel(products);
   
   // Periodic updates
   await for (final _ in Stream.periodic(autoRefreshDuration)) {
-    yield await ref.read(firestoreServiceProvider).getProducts();
+    products = await ref.read(firestoreServiceProvider).getProducts();
+    yield _enrichProductsWithARModel(products);
   }
 });
 
 // Provider for products by category with auto-refresh
 final productsByCategoryProvider = StreamProvider.family<List<Product>, String>((ref, categoryId) async* {
   // Initial data fetch
-  yield await ref.read(firestoreServiceProvider).getProductsByCategory(categoryId);
+  var products = await ref.read(firestoreServiceProvider).getProductsByCategory(categoryId);
+  yield _enrichProductsWithARModel(products);
   
   // Periodic updates
   await for (final _ in Stream.periodic(autoRefreshDuration)) {
-    yield await ref.read(firestoreServiceProvider).getProductsByCategory(categoryId);
+    products = await ref.read(firestoreServiceProvider).getProductsByCategory(categoryId);
+    yield _enrichProductsWithARModel(products);
   }
 });
 
@@ -66,7 +106,8 @@ final productDetailsProvider = StreamProvider.family<Product?, String>((ref, pro
     .collection('products')
     .doc(productId)
     .snapshots()
-    .map((doc) => doc.exists ? Product.fromMap(doc.id, doc.data()!) : null);
+    .map((doc) => doc.exists ? Product.fromMap(doc.id, doc.data()!) : null)
+    .map((product) => _enrichProductWithARModel(product));
 });
 
 // Provider for search results (no auto-refresh needed as it's query-based)
@@ -75,7 +116,8 @@ final searchProductsProvider = FutureProvider.family<List<Product>, String>((ref
   if (query.isEmpty) {
     return [];
   }
-  return firestoreService.searchProducts(query);
+  var products = await firestoreService.searchProducts(query);
+  return _enrichProductsWithARModel(products);
 });
 
 // Provider for all products (converted to stream)
@@ -85,7 +127,8 @@ final allProductsProvider = StreamProvider<List<Product>>(
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Product.fromMap(doc.id, doc.data()))
-            .toList());
+            .toList())
+        .map((products) => _enrichProductsWithARModel(products));
   },
 );
 
@@ -98,7 +141,8 @@ final popularProductsProvider = StreamProvider<List<Product>>(
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Product.fromMap(doc.id, doc.data()))
-            .toList());
+            .toList())
+        .map((products) => _enrichProductsWithARModel(products));
   },
 );
 
@@ -111,45 +155,50 @@ final rentalProductsProvider = StreamProvider<List<Product>>(
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Product.fromMap(doc.id, doc.data()))
-            .toList());
+            .toList())
+        .map((products) => _enrichProductsWithARModel(products));
   },
 );
 
 // Provider for best selling products with auto-refresh
 final bestSellersProvider = StreamProvider<List<Product>>((ref) async* {
   // Initial data fetch
-  yield await ref.read(firestoreServiceProvider).getBestSellingProducts();
+  var products = await ref.read(firestoreServiceProvider).getBestSellingProducts();
+  yield _enrichProductsWithARModel(products);
   
   // Periodic updates
   await for (final _ in Stream.periodic(autoRefreshDuration)) {
-    yield await ref.read(firestoreServiceProvider).getBestSellingProducts();
+    products = await ref.read(firestoreServiceProvider).getBestSellingProducts();
+    yield _enrichProductsWithARModel(products);
   }
 });
 
 // Provider for products by category name with auto-refresh
 final productsByCategoryNameProvider = StreamProvider.family<List<Product>, String>((ref, categoryName) async* {
   // Initial data fetch
-  final products = await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+  var products = await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+  var enrichedProducts = _enrichProductsWithARModel(products);
   
   // Print debug information for troubleshooting
   if (categoryName == 'Featured' || categoryName == 'New Arrivals') {
-    print('Debug - Category: $categoryName, Found ${products.length} products');
-    for (var product in products) {
-      print('Product: ${product.name}, Category: ${product.category}, IsFeatured: ${product.isFeatured}');
+    print('Debug - Category: $categoryName, Found ${enrichedProducts.length} products');
+    for (var product in enrichedProducts) {
+      print('Product: ${product.name}, Category: ${product.category}, IsFeatured: ${product.isFeatured}, HasAR: ${product.hasARModel}');
     }
   }
   
-  yield products;
+  yield enrichedProducts;
   
   // Periodic updates
   await for (final _ in Stream.periodic(autoRefreshDuration)) {
-    final updatedProducts = await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+    var updatedProducts = await ref.read(firestoreServiceProvider).getProductsByCategoryName(categoryName);
+    var enrichedUpdatedProducts = _enrichProductsWithARModel(updatedProducts);
     
     // Print debug information for troubleshooting on refresh
     if (categoryName == 'Featured' || categoryName == 'New Arrivals') {
-      print('Debug Refresh - Category: $categoryName, Found ${updatedProducts.length} products');
+      print('Debug Refresh - Category: $categoryName, Found ${enrichedUpdatedProducts.length} products');
     }
     
-    yield updatedProducts;
+    yield enrichedUpdatedProducts;
   }
 }); 
