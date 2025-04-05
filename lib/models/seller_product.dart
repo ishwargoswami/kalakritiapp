@@ -23,6 +23,8 @@ class SellerProduct {
   final double rating;
   final int reviewCount;
   final bool isApproved;
+  final String? arModelUrl;
+  final bool hasARModel;
   
   SellerProduct({
     required this.id,
@@ -47,6 +49,8 @@ class SellerProduct {
     this.rating = 0.0,
     this.reviewCount = 0,
     this.isApproved = false,
+    this.arModelUrl,
+    this.hasARModel = false,
   });
   
   // Create SellerProduct from Firestore document
@@ -92,6 +96,8 @@ class SellerProduct {
       rating: (data['rating'] ?? data['averageRating'] ?? 0).toDouble(),
       reviewCount: data['reviewCount'] ?? 0,
       isApproved: data['isApproved'] ?? false,
+      arModelUrl: data['arModelUrl'],
+      hasARModel: data['hasARModel'] ?? false,
     );
   }
   
@@ -119,6 +125,8 @@ class SellerProduct {
       'rating': rating,
       'reviewCount': reviewCount,
       'isApproved': isApproved,
+      'arModelUrl': arModelUrl,
+      'hasARModel': hasARModel,
     };
   }
   
@@ -167,6 +175,8 @@ class SellerProduct {
     double? rating,
     int? reviewCount,
     bool? isApproved,
+    String? arModelUrl,
+    bool? hasARModel,
   }) {
     return SellerProduct(
       id: id ?? this.id,
@@ -191,6 +201,8 @@ class SellerProduct {
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
       isApproved: isApproved ?? this.isApproved,
+      arModelUrl: arModelUrl ?? this.arModelUrl,
+      hasARModel: hasARModel ?? this.hasARModel,
     );
   }
 } 

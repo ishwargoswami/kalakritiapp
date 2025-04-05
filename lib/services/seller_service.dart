@@ -52,6 +52,7 @@ class SellerService {
     Map<String, dynamic>? specifications,
     double discountPercentage = 0.0,
     bool isFeatured = false,
+    String? arModelUrl,
   }) async {
     try {
       if (!isSellerAuthenticated) {
@@ -88,6 +89,8 @@ class SellerService {
         'reviewCount': 0,
         'sellerId': currentSellerId,
         'isApproved': false,
+        'arModelUrl': arModelUrl,
+        'hasARModel': arModelUrl != null,
       };
       
       // Add to Firestore
@@ -145,6 +148,7 @@ class SellerService {
     Map<String, dynamic>? specifications,
     double? discountPercentage,
     bool? isFeatured,
+    String? arModelUrl,
   }) async {
     try {
       if (!isSellerAuthenticated) {
@@ -230,6 +234,14 @@ class SellerService {
       if (material != null) updateData['material'] = material;
       if (isFeatured != null) updateData['isFeatured'] = isFeatured;
       if (isAvailable != null) updateData['isAvailable'] = isAvailable;
+      if (arModelUrl != null) {
+        updateData['arModelUrl'] = arModelUrl;
+        updateData['hasARModel'] = true;
+      } else if (arModelUrl == '') {
+        // Empty string indicates removal of model
+        updateData['arModelUrl'] = null;
+        updateData['hasARModel'] = false;
+      }
       
       // Create update data for main products collection
       final Map<String, dynamic> buyerUpdateData = {...updateData};
@@ -1008,9 +1020,9 @@ class SellerService {
     String? size,
     String? weight,
     String? material,
-    Map<String, dynamic>? specifications,
     double discountPercentage = 0.0,
     bool isFeatured = false,
+    String? arModelUrl,
   }) async {
     try {
       if (!isSellerAuthenticated) {
@@ -1035,7 +1047,7 @@ class SellerService {
         'isAvailable': true,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        'specifications': specifications ?? {},
+        'specifications': {},
         'size': size,
         'weight': weight,
         'material': material,
@@ -1044,10 +1056,9 @@ class SellerService {
         'rating': 0.0,
         'reviewCount': 0,
         'sellerId': currentSellerId,
-        'sellerName': sellerName,
-        'isApproved': true, // Auto-approve now for testing
-        'salesCount': 0,
-        'viewCount': 0,
+        'isApproved': false,
+        'arModelUrl': arModelUrl,
+        'hasARModel': arModelUrl != null,
       };
       
       // Add to sellerProducts collection

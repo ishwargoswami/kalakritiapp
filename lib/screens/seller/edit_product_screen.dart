@@ -5,12 +5,14 @@ import 'package:kalakritiapp/models/seller_product.dart';
 import 'package:kalakritiapp/providers/category_provider.dart';
 import 'package:kalakritiapp/providers/seller_provider.dart';
 import 'package:kalakritiapp/providers/seller_service_provider.dart';
+import 'package:kalakritiapp/screens/seller/product_ar_upload.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
 import 'package:kalakritiapp/widgets/custom_text_field.dart';
 import 'package:kalakritiapp/widgets/image_picker_widget.dart';
 import 'package:kalakritiapp/widgets/loading_overlay.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:kalakritiapp/models/product.dart';
 
 class EditProductScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -44,6 +46,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
   List<XFile> _newImages = [];
   List<String> _selectedCategories = [];
   bool _isFeatured = false;
+  String? _arModelUrl;
   
   // For specifications
   List<Map<String, String>> _specifications = [];
@@ -113,6 +116,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
         _existingImageUrls = List<String>.from(product.imageUrls);
         _selectedCategories = List<String>.from(product.categories);
         _isFeatured = product.isFeatured;
+        _arModelUrl = product.arModelUrl;
         
         // Parse specifications
         if (product.specifications != null) {
@@ -180,6 +184,7 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
             ? double.parse(_discountController.text) 
             : 0.0,
         isFeatured: _isFeatured,
+        arModelUrl: _arModelUrl,
       );
       
       // Refresh the products list
@@ -248,6 +253,42 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
     setState(() {
       _specifications.removeAt(index);
     });
+  }
+
+  Future<void> _navigateToARModelUpload() async {
+    // Create a temporary Product object from current data
+    final tempProduct = Product(
+      id: widget.productId,
+      name: _nameController.text,
+      description: _descriptionController.text,
+      price: double.tryParse(_priceController.text) ?? 0,
+      isAvailableForRent: false,
+      isAvailableForSale: true,
+      categoryId: _selectedCategories.firstOrNull ?? '',
+      imageUrls: _existingImageUrls,
+      isFeatured: _isFeatured,
+      rating: 0,
+      ratingCount: 0,
+      specifications: {},
+      createdAt: DateTime.now(),
+      artisanId: '',
+      artisanName: '',
+      stock: int.tryParse(_quantityController.text) ?? 0,
+      arModelUrl: _arModelUrl,
+    );
+    
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductARUpload(product: tempProduct),
+      ),
+    );
+    
+    if (result != null) {
+      setState(() {
+        _arModelUrl = result;
+      });
+    }
   }
 
   @override
@@ -680,6 +721,9 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                       }).toList(),
                       const SizedBox(height: 32),
                       
+                      // Add 3D model section after the specifications section
+                      _build3DModelSection(),
+                      
                       // Submit button
                       CustomButton(
                         text: 'Update Product',
@@ -691,6 +735,48 @@ class _EditProductScreenState extends ConsumerState<EditProductScreen> {
                   ),
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _build3DModelSection() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.view_in_ar,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '3D Model',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            if (_arModelUrl != null) ...[
+              Text(
+                'This product has a 3D model',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+            ],
+            
+            ElevatedButton.icon(
+              icon: Icon(_arModelUrl == null ? Icons.add : Icons.edit),
+              label: Text(_arModelUrl == null ? 'Add 3D Model' : 'Change 3D Model'),
+              onPressed: _navigateToARModelUpload,
+            ),
+          ],
+        ),
       ),
     );
   }

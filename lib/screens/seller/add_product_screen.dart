@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kalakritiapp/providers/category_provider.dart';
 import 'package:kalakritiapp/providers/seller_service_provider.dart';
+import 'package:kalakritiapp/screens/seller/product_ar_upload.dart';
 import 'package:kalakritiapp/widgets/custom_button.dart';
 import 'package:kalakritiapp/widgets/custom_text_field.dart';
 import 'package:kalakritiapp/widgets/loading_overlay.dart';
+import 'package:kalakritiapp/models/product.dart';
+import 'package:uuid/uuid.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
   const AddProductScreen({super.key});
@@ -30,6 +33,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final List<String> _imageUrls = [];
   bool _isLoading = false;
   String? _errorMessage;
+  String? _arModelUrl;
   
   @override
   void dispose() {
@@ -103,6 +107,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         weight: _weightController.text.trim(),
         material: _materialController.text.trim(),
         discountPercentage: discount,
+        arModelUrl: _arModelUrl,
       );
       
       // Navigate back on success
@@ -124,6 +129,98 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         });
       }
     }
+  }
+
+  Future<void> _navigateToARModelUpload() async {
+    // Create a temporary Product object with a temporary ID
+    final tempId = const Uuid().v4();
+    final tempProduct = Product(
+      id: tempId,
+      name: _nameController.text.isEmpty ? 'New Product' : _nameController.text,
+      description: _descriptionController.text.isEmpty ? 'Product description' : _descriptionController.text,
+      price: double.tryParse(_priceController.text) ?? 0,
+      isAvailableForRent: false,
+      isAvailableForSale: true,
+      categoryId: _selectedCategories.firstOrNull ?? '',
+      imageUrls: _imageUrls,
+      isFeatured: false,
+      rating: 0,
+      ratingCount: 0,
+      specifications: {},
+      createdAt: DateTime.now(),
+      artisanId: '',
+      artisanName: '',
+      stock: int.tryParse(_quantityController.text) ?? 0,
+      arModelUrl: _arModelUrl,
+    );
+    
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductARUpload(product: tempProduct),
+      ),
+    );
+    
+    if (result != null) {
+      setState(() {
+        _arModelUrl = result;
+      });
+    }
+  }
+
+  // Build the 3D model section
+  Widget _build3DModelSection() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.view_in_ar,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '3D Model (Optional)',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add a 3D model to provide an AR experience for your customers',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            
+            if (_arModelUrl != null) ...[
+              Text(
+                'You have added a 3D model',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            
+            ElevatedButton.icon(
+              icon: Icon(_arModelUrl == null ? Icons.add : Icons.edit),
+              label: Text(_arModelUrl == null ? 'Add 3D Model' : 'Change 3D Model'),
+              onPressed: _navigateToARModelUpload,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -491,13 +588,18 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                       
                       const SizedBox(height: 32),
                       
+                      // Add 3D model section before the submit button
+                      // (after other sections like product details, images, categories, etc.)
+                      _build3DModelSection(),
+                      
+                      const SizedBox(height: 24),
+                      
                       // Submit button
-                      Center(
-                        child: CustomButton(
-                          text: 'Add Product',
-                          onPressed: _addProduct,
-                          width: double.infinity,
-                        ),
+                      CustomButton(
+                        text: 'Add Product',
+                        onPressed: _addProduct,
+                        isLoading: _isLoading,
+                        width: double.infinity,
                       ),
                     ],
                   ),
