@@ -240,6 +240,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       ),
                     );
                   },
+                  tooltip: 'View in KalaKriti AR',
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(

@@ -37,6 +37,22 @@ class ARUtils {
     }
   }
   
+  // Specific formatting for ModelViewer component
+  static String getModelViewerPath(String assetPath) {
+    final path = getModelPath(assetPath);
+    
+    if (path.isEmpty) {
+      return getDefaultModelPath();
+    }
+    
+    // For web compatibility, ModelViewer may need additional formatting
+    if (kIsWeb && path.startsWith('assets/')) {
+      return path;
+    }
+    
+    return path;
+  }
+  
   // Get the alien_flowers model path with correct formatting
   static String getDefaultModelPath() {
     return 'assets/models/alien_flowers.glb';

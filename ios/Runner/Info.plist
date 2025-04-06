@@ -45,6 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to show products in AR within your space</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>http</string>

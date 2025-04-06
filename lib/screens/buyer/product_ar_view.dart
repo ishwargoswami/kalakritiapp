@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kalakritiapp/widgets/ar_model_viewer.dart';
-import 'package:kalakritiapp/screens/ar_view_screen.dart';
+import 'package:kalakritiapp/screens/custom_camera_ar_view.dart';
 import 'package:kalakritiapp/models/product.dart';
 import 'package:kalakritiapp/providers/product_provider.dart';
 import 'package:kalakritiapp/utils/ar_utils.dart';
@@ -62,26 +62,39 @@ class ProductARView extends ConsumerWidget {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
+                    
+                    // KalaKriti Custom AR View Button
                     if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || 
                                  defaultTargetPlatform == TargetPlatform.android))
                       ElevatedButton.icon(
                         icon: const Icon(Icons.view_in_ar),
-                        label: const Text('View in AR (Place in your space)'),
+                        label: const Text('View in Your Space (AR)'),
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ARViewScreen(
+                              builder: (context) => CustomCameraARView(
                                 modelPath: modelPath,
-                                modelName: product.name,
+                                productName: product.name,
                               ),
                             ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 50),
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                         ),
                       ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    Text(
+                      'Experience your product in real surroundings with our custom AR technology!',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 ),
               ),
