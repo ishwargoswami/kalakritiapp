@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as path;
+import 'package:kalakritiapp/screens/seller/glb_creation_guide.dart';
 
 class ProductARUpload extends StatefulWidget {
   final Product? product;
@@ -71,6 +72,10 @@ class _ProductARUploadState extends State<ProductARUpload> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Help section at the top
+              _buildHelpSection(),
+              const SizedBox(height: 24),
+              
               if (errorMessage != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -154,6 +159,61 @@ class _ProductARUploadState extends State<ProductARUpload> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHelpSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "Don't have a 3D model?",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Learn how to create or obtain GLB 3D models for your products.",
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.help_outline),
+                  label: const Text('How to Create 3D Models'),
+                  onPressed: _navigateToGLBGuide,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToGLBGuide() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const GLBCreationGuideScreen(),
       ),
     );
   }
