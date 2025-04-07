@@ -67,7 +67,7 @@ dependencies {
 
 // Add a task to copy GLB models to assets
 tasks.register<Copy>("copyModelsToAssets") {
-    from("models")
+    from("${project.rootDir}/../assets/models")
     into("src/main/assets/models")
     include("**/*.glb")
 }

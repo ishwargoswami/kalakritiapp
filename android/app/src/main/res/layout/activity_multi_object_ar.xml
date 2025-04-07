@@ -74,7 +74,7 @@
         android:contentDescription="Capture AR scene"
         android:src="@android:drawable/ic_menu_camera"
         android:tint="@android:color/white"
-        app:layout_constraintBottom_toTopOf="@+id/models_layout"
+        app:layout_constraintBottom_toTopOf="@+id/models_scroll"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
