@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
+import '../services/native_ar_service.dart';
 import '../utils/ar_utils.dart';
 
 class CustomCameraARView extends StatefulWidget {
@@ -209,6 +210,23 @@ class _CustomCameraARViewState extends State<CustomCameraARView> {
         title: Text('KalaKriti AR View - ${widget.productName}'),
         backgroundColor: Colors.black.withOpacity(0.5),
         actions: [
+          // Native AR button (Android only)
+          if (Platform.isAndroid)
+            IconButton(
+              icon: const Icon(Icons.view_in_ar),
+              tooltip: 'Launch Native AR Experience',
+              onPressed: () async {
+                final success = await NativeArService.launchNativeAr();
+                if (!success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to launch native AR experience'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
           IconButton(
             icon: Icon(_showHelp ? Icons.help : Icons.help_outline),
             onPressed: () {
